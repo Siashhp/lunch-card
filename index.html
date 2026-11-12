@@ -1,0 +1,1332 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="午饭卡">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23A85B1C'/%3E%3Cpath d='M14 30h36c0 10-8 18-18 18S14 40 14 30z' fill='%23fff'/%3E%3Crect x='26' y='17' width='12' height='4' rx='2' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="description" content="午饭卡：给双职工家庭和带娃老人用的一周午餐排程、采购清单和厨房时间线。">
+<title>午饭卡 · 老人也能做的一周午餐</title>
+<style>
+:root{
+  --bg:#FAF8F4;--card:#FFFFFF;--ink:#2A2622;--ink2:#6B6259;--ink3:#9C9288;
+  --line:#E9E3D9;--brand:#A85B1C;--brand-soft:#FBF0E4;
+  --ok:#3F7A4B;--ok-soft:#EDF5EE;--warn:#A8452F;--warn-soft:#FBEDE9;
+  --mid:#8A7A63;--mid-soft:#F4EFE6;
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);padding-bottom:calc(76px + env(safe-area-inset-bottom));
+  font:15px/1.62 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+header{padding:22px 0 6px}
+h1{font-size:20px;font-weight:500;margin:0 0 4px;letter-spacing:.02em}
+.sub{font-size:12.5px;color:var(--ink3);margin:0}
+h2{font-size:14px;font-weight:500;margin:22px 0 8px;color:var(--ink2);letter-spacing:.02em}
+.cnt{font-size:11.5px;font-weight:400;color:var(--ink3);margin-left:5px}
+.bar{display:flex;gap:8px;align-items:center;margin:14px 0 4px;flex-wrap:wrap}
+button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
+.btn{padding:9px 15px;border-radius:10px;background:var(--brand);color:#fff;font-size:14px;
+  transition:opacity .15s ease}
+.btn.ghost{background:var(--card);color:var(--ink2);border:1px solid var(--line)}
+.btn:active{opacity:.75}
+.btn:focus-visible,.pill:focus-visible,.chip:focus-visible,nav button:focus-visible{
+  outline:2px solid var(--brand);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;margin:12px 0}
+.day-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.day-name{font-size:15.5px;font-weight:500}
+.day-name .today-tag{font-size:10.5px;color:#fff;background:var(--brand);border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.day-date{font-size:12.5px;color:var(--ink3)}
+.form-tag{display:inline-block;font-size:11.5px;color:var(--brand);background:var(--brand-soft);
+  border-radius:6px;padding:2px 7px;margin:7px 0 2px}
+.dish{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 0;border-bottom:1px dashed var(--line);width:100%;text-align:left}
+.dish:last-of-type{border-bottom:0}
+.dish-main{flex:1;min-width:0;padding:0;text-align:left}
+.dish-n{font-size:15px;display:block}
+.dish-m{font-size:11.5px;color:var(--ink3)}
+.dish-r{display:flex;gap:5px;flex-shrink:0}
+.pill{font-size:12.5px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);color:var(--ink2);background:#fff;
+  white-space:nowrap;min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+.pill.on-ok{background:var(--ok-soft);border-color:#C9DFCC;color:var(--ok)}
+.pill.on-mid{background:var(--mid-soft);border-color:#E0D5C2;color:var(--mid)}
+.pill.on-bad{background:var(--warn-soft);border-color:#EBCFC7;color:var(--warn)}
+.newflag{font-size:10.5px;color:#fff;background:var(--brand);border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+.total{font-size:12px;color:var(--ink3);margin-top:8px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.total b{font-weight:500;color:var(--ink2)}
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);
+  border-top:1px solid var(--line);backdrop-filter:blur(8px);z-index:20}
+nav .inner{max-width:640px;margin:0 auto;display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:10px 0 9px;font-size:11.5px;color:var(--ink3);display:flex;flex-direction:column;align-items:center;gap:3px;min-height:46px}
+nav button.on{color:var(--brand)}
+nav .dot{width:5px;height:5px;border-radius:50%;background:transparent}
+nav button.on .dot{background:var(--brand)}
+.view{display:none}
+.view.on{display:block}
+
+.tl-hero{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:12px 0}
+.tl-hero .big{font-size:26px;font-weight:500;letter-spacing:.02em;line-height:1.3}
+.tl-hero .meta{font-size:12.5px;color:var(--ink3);margin-top:4px}
+.tl-hero .warnline{margin-top:10px;font-size:13px;color:var(--warn);background:var(--warn-soft);border-radius:9px;padding:8px 11px}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tl li:last-child{border-bottom:0}
+.tl .t{font-size:14px;color:var(--brand);font-variant-numeric:tabular-nums;width:52px;flex-shrink:0;font-weight:500}
+.tl .b{flex:1;min-width:0}
+.tl .n{display:block;font-size:16.5px;line-height:1.4}
+.tl .d{display:block;font-size:12px;color:var(--ink3);margin-top:2px}
+.tl li.passive .t{color:var(--ink3)}
+.tl li.serve .n{font-weight:500}
+.tl li.done .n{color:var(--ink3);text-decoration:line-through}
+.tl .tick{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:transparent;background:#fff}
+.tl li.done .tick{background:var(--ok-soft);border-color:#C9DFCC;color:var(--ok)}
+
+.shop-group{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:6px 15px;margin:12px 0}
+.shop-h{font-size:13px;color:var(--brand);padding:10px 0 4px;letter-spacing:.04em}
+.shop-i{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:15px;width:100%;text-align:left}
+.shop-i:last-child{border-bottom:0}
+.shop-i .box{width:26px;height:26px;border:1px solid var(--line);border-radius:7px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;background:#fff}
+.shop-i.got .box{background:var(--ok-soft);border-color:#C9DFCC;color:var(--ok)}
+.shop-i.got .nm{color:var(--ink3);text-decoration:line-through}
+.shop-i .nm{flex:1;min-width:0}
+.shop-i .q{color:var(--ink2);font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.hint{font-size:12.5px;color:var(--ink3);line-height:1.65;margin:8px 0}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 2px}
+.chip{font-size:13.5px;padding:9px 13px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink2);
+  min-height:38px;display:inline-flex;align-items:center}
+.chip.on{background:var(--brand-soft);border-color:#EBCFAE;color:var(--brand)}
+.chip.off{opacity:.45;text-decoration:line-through}
+.chip .tag{font-size:10.5px;color:var(--ink3);margin-left:4px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);gap:12px}
+.row:last-child{border-bottom:0}
+.row .k{font-size:14.5px}
+.row .v{font-size:12.5px;color:var(--ink3);text-align:right}
+.empty{color:var(--ink3);font-size:13.5px;text-align:center;padding:30px 0}
+.tipbar{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 13px;margin:10px 0 0;
+  font-size:12.5px;line-height:1.6}
+.gesture{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.gesture div{flex:1;min-width:96px;background:var(--bg);border-radius:10px;padding:9px 10px;font-size:11.5px;color:var(--ink2);line-height:1.5}
+.gesture b{display:block;font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px}
+
+dialog#sheet{position:fixed;left:0;right:0;bottom:0;top:auto;margin:0 auto;width:100%;max-width:640px;
+  border:0;border-radius:18px 18px 0 0;padding:18px 18px 26px;max-height:88vh;overflow:auto;
+  background:var(--card);color:var(--ink);box-shadow:0 -8px 40px rgba(42,38,34,.18)}
+dialog#sheet::backdrop{background:rgba(30,26,20,.42)}
+dialog#sheet[open]{animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(14px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  dialog#sheet[open]{animation:none}
+  .btn{transition:none}
+}
+.sh-title{font-size:19px;font-weight:500;margin:0 0 2px}
+.sh-meta{font-size:12.5px;color:var(--ink3);margin-bottom:14px}
+.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding:11px 0 11px 34px;font-size:16px;line-height:1.6;border-bottom:1px solid var(--line)}
+.steps li:before{content:counter(s);position:absolute;left:0;top:11px;width:24px;height:24px;
+  border-radius:50%;background:var(--brand-soft);color:var(--brand);font-size:13px;
+  display:flex;align-items:center;justify-content:center}
+.steps li:last-child{border-bottom:0}
+.sh-note{margin-top:14px;font-size:13px;color:var(--ink2);background:var(--brand-soft);border-radius:10px;padding:11px 13px;line-height:1.6}
+.sh-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.sh-actions .btn{flex:1;min-width:120px;text-align:center}
+
+@media print{
+  body{background:#fff;padding:0}
+  nav,.bar,.no-print,#v-today,#v-lib,#v-set{display:none!important}
+  #v-week,#v-shop{display:block!important}
+  .wrap{max-width:none;padding:0}
+  .card,.shop-group{break-inside:avoid;margin:0 0 8px;border:1px solid #ddd}
+  .dish{border-bottom:1px dotted #ddd}
+  .pill,.newflag,.today-tag{display:none}
+  header{padding-top:0}
+  .print-only{display:block!important}
+}
+.print-only{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="insecureTip" class="tipbar no-print" style="display:none"></div>
+  <header>
+    <h1>午饭卡</h1>
+    <p class="sub" id="subhead">一周午餐排程 · 老人能做的菜，换个形态就不腻</p>
+    <div class="bar no-print">
+      <button class="btn" id="btnGen" type="button">重新排一周</button>
+      <button class="btn ghost" id="btnCopyAll" type="button">整周发群里</button>
+      <button class="btn ghost" id="btnPrint" type="button">打印 / 贴冰箱</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="view on" id="v-week" aria-label="本周菜单"></section>
+    <section class="view" id="v-today" aria-label="今天的流程"></section>
+    <section class="view" id="v-shop" aria-label="本周采购清单"></section>
+    <section class="view" id="v-lib" aria-label="菜库"></section>
+    <section class="view" id="v-set" aria-label="设置"></section>
+  </main>
+  <noscript><p class="hint">这个页面需要开启 JavaScript 才能排菜单。</p></noscript>
+</div>
+
+<nav class="no-print" aria-label="主导航"><div class="inner">
+  <button data-v="week" class="on" type="button"><span class="dot"></span>本周</button>
+  <button data-v="today" type="button"><span class="dot"></span>今天</button>
+  <button data-v="shop" type="button"><span class="dot"></span>买菜</button>
+  <button data-v="lib" type="button"><span class="dot"></span>菜库</button>
+  <button data-v="set" type="button"><span class="dot"></span>设置</button>
+</div></nav>
+
+<dialog id="sheet" aria-label="菜品详情"><div id="sheetBody"></div></dialog>
+
+<script>
+"use strict";
+(function(){
+try{
+var DISHES=[
+{id:"tomato-egg",n:"番茄炒蛋",t:"protein",p:"egg",c:"red",lv:"A",min:8,dev:[],
+ steps:["番茄 2 个切滚刀块，鸡蛋 3 个打散，加一小撮盐","锅热倒油，蛋液下锅，边缘凝固就盛出，别炒老","原锅下番茄，中火炒到出汁、变软","倒回鸡蛋，翻两下，加盐关火"],
+ note:"最稳的一道。番茄要炒到出汁才好吃，急不得。"},
+{id:"steam-egg",n:"虾皮蒸蛋",t:"protein",p:"egg",c:"white",lv:"A",min:12,dev:["steamer"],
+ steps:["鸡蛋 2 个打散，加温水（蛋液的 1.5 倍）搅匀","过筛去掉泡沫，撒一小把虾皮","碗上盖盘子或保鲜膜，水开后中小火蒸 10 分钟","出锅淋几滴生抽和香油"],
+ note:"盖住再蒸是关键，不然表面会蜂窝。电饭锅蒸屉也能做。"},
+{id:"boiled-shrimp",n:"白灼虾",t:"protein",p:"shrimp",c:"red",lv:"A",min:10,dev:[],
+ steps:["水烧开，放姜片、几粒花椒、一勺料酒","虾下锅，变色卷起就捞（约 2 分钟），久煮发柴","调一碟蘸料：生抽 + 醋 + 蒜末 + 几滴香油"],
+ note:"买冰鲜白虾就行，不用活虾。孩子自己剥着吃，参与感强。"},
+{id:"steamed-bass",n:"清蒸鲈鱼",t:"protein",p:"fish",c:"white",lv:"A",min:15,dev:["steamer"],
+ steps:["买鱼时让摊主杀好、去鳞去内脏，回家冲净擦干","鱼身两面各划两刀，铺姜片葱段，水开后蒸 8 分钟","倒掉盘里的腥水，铺新葱丝","淋两勺蒸鱼豉油，浇一勺热油"],
+ note:"一定要买处理好的。倒掉蒸出来的水，这是不腥的关键。"},
+{id:"cola-wings",n:"可乐鸡翅",t:"protein",p:"chicken",c:"brown",lv:"A",min:25,dev:[],
+ steps:["鸡翅 8 个两面各划一刀，冷水下锅焯 2 分钟，捞出冲净","锅少油，鸡翅两面煎到微黄","倒可乐没过鸡翅，加两勺生抽、一片姜","大火烧开转中小火 15 分钟，最后大火收汁"],
+ note:"不用放糖不用放盐，可乐就够。收汁时看着点，容易糊。"},
+{id:"mushroom-chicken",n:"香菇滑鸡",t:"protein",p:"chicken",c:"brown",lv:"A",min:30,dev:[],
+ steps:["鸡腿肉切块，加一勺生抽、半勺淀粉抓匀，腌 10 分钟","干香菇提前泡软（或直接用鲜香菇）切块","锅里下姜片爆香，鸡肉下锅炒到变白","加香菇、一勺蚝油，小半碗水，盖盖焖 12 分钟"],
+ note:"用鸡腿肉，别用鸡胸，焖久了也不柴。"},
+{id:"pork-steam-egg",n:"肉末蒸蛋",t:"protein",p:"pork",c:"white",lv:"A",min:15,dev:["steamer"],
+ steps:["猪肉末 100 克，加一勺生抽、少许姜末拌匀，铺在碗底","鸡蛋 2 个加温水打散，过筛倒在肉末上","盖盘，水开后中小火蒸 12 分钟","出锅撒葱花，淋几滴香油"],
+ note:"一碗里既有蛋又有肉，配米饭就是一餐。"},
+{id:"braised-pork",n:"压力锅红烧肉",t:"protein",p:"pork",c:"brown",lv:"A",min:40,dev:["pressure"],
+ steps:["五花肉切麻将块，冷水下锅焯水，捞出冲净","锅里不放油，肉块下锅煸出油，加冰糖炒出糖色","加生抽两勺、老抽半勺、姜片、八角一个，倒热水没过","倒进压力锅，上汽后压 15 分钟，自然泄压"],
+ note:"有压力锅就不用看火，这是老人最省心的一道硬菜。"},
+{id:"beef-potato",n:"土豆炖牛肉",t:"protein",p:"beef",c:"brown",lv:"A",min:45,dev:["pressure"],
+ steps:["牛腩切块，冷水下锅焯水，撇净浮沫捞出","土豆、胡萝卜切滚刀块","牛肉加姜片、一勺生抽、热水，压力锅上汽压 20 分钟","泄压后加土豆胡萝卜，再压 8 分钟，加盐调味"],
+ note:"两次压，土豆不会烂成泥。"},
+{id:"tofu-mince",n:"肉末烧豆腐",t:"protein",p:"tofu",c:"white",lv:"A",min:15,dev:[],
+ steps:["嫩豆腐切块，用淡盐水泡 5 分钟（不易碎）","肉末下锅炒散，加一勺豆瓣酱或生抽炒香","加小半碗水，下豆腐，小火煮 5 分钟","淋淀粉水勾薄芡，撒葱花"],
+ note:"孩子不吃辣就用生抽，别放豆瓣酱。"},
+{id:"chicken-breast",n:"香煎鸡胸",t:"protein",p:"chicken",c:"white",lv:"B",min:12,dev:[],
+ steps:["鸡胸横刀片成两片薄片，用刀背拍松","加盐、黑胡椒、一勺生抽、半勺淀粉抓匀，腌 15 分钟","平底锅少油，中火每面煎 3 分钟","关火后盖盖焖 2 分钟再切"],
+ note:"新菜候选。切薄、拍松，孩子才咬得动。"},
+{id:"airfry-ribs",n:"蒜香排骨",t:"protein",p:"pork",c:"brown",lv:"B",min:30,dev:["airfryer"],
+ steps:["排骨斩小块，用蒜末、生抽、蚝油、少许糖腌 30 分钟","空气炸锅 190 度先烤 12 分钟","翻面再烤 8 分钟","撒白芝麻"],
+ note:"新菜候选。有空气炸锅才做，没有就别选。"},
+{id:"shrimp-egg",n:"滑蛋虾仁",t:"protein",p:"shrimp",c:"yellow",lv:"B",min:10,dev:[],
+ steps:["虾仁解冻，用厨房纸吸干，加少许盐和淀粉抓匀","鸡蛋 3 个打散，加两勺牛奶或水","锅热油，虾仁炒到变色盛出","倒蛋液，小火，边缘凝固就往中间推，还半流动时倒回虾仁，关火"],
+ note:"新菜候选。全程小火，靠余温把蛋焖熟。"},
+
+{id:"garlic-greens",n:"蒜蓉炒青菜",t:"veg",p:"veg",c:"green",lv:"A",min:6,dev:[],
+ steps:["青菜洗净沥干，蒜切末","锅烧到冒烟再倒油，下蒜末爆香","青菜下锅，大火快炒 1 分钟","加盐，翻两下立刻出锅"],
+ note:"锅一定要够热，火大才不出水。"},
+{id:"baby-cabbage",n:"上汤娃娃菜",t:"veg",p:"veg",c:"green",lv:"A",min:10,dev:[],
+ steps:["娃娃菜竖切成四瓣，洗净","锅里少油，下一勺蒜末和一点虾皮炒香","加一碗水烧开，下娃娃菜煮 3 分钟","加盐，淋几滴香油"],
+ note:"有汤有菜，孩子连汤都能喝。"},
+{id:"cauliflower",n:"番茄炒花菜",t:"veg",p:"veg",c:"red",lv:"A",min:10,dev:[],
+ steps:["花菜掰小朵，开水焯 1 分钟捞出","番茄切块，下锅炒出汁","下花菜翻炒 2 分钟","加盐、少许糖，出锅"],
+ note:"花菜先焯，炒的时候才熟得透。"},
+{id:"broccoli",n:"清炒西兰花",t:"veg",p:"veg",c:"green",lv:"A",min:8,dev:[],
+ steps:["西兰花掰小朵，盐水泡 5 分钟后冲净","开水焯 1 分钟，捞出过凉水（保持翠绿）","蒜末爆香，下西兰花大火翻炒","加盐，出锅"],
+ note:"焯完过凉水，颜色才好看，孩子看着愿意吃。"},
+{id:"potato-shred",n:"醋溜土豆丝",t:"veg",p:"veg",c:"white",lv:"B",min:12,dev:[],
+ steps:["土豆切细丝，泡水洗掉淀粉，沥干","锅热油，下干辣椒或花椒爆香（可省）","土豆丝大火快炒 2 分钟","沿锅边淋一勺醋，加盐，出锅"],
+ note:"新菜候选。切丝费时间，也可以用擦丝器。"},
+{id:"carrot-wood",n:"胡萝卜炒木耳",t:"veg",p:"veg",c:"orange",lv:"A",min:10,dev:[],
+ steps:["木耳提前泡发，撕小朵；胡萝卜切片","胡萝卜先下锅炒 2 分钟（要油才出营养）","下木耳翻炒，加小半碗水焖 2 分钟","加盐、少许生抽"],
+ note:"胡萝卜一定要过油，营养才吸收。"},
+{id:"cucumber",n:"拍黄瓜",t:"veg",p:"veg",c:"green",lv:"A",min:5,dev:[],
+ steps:["黄瓜拍裂，切段，撒盐腌 5 分钟，倒掉水","加蒜末、一勺醋、半勺生抽、几滴香油","拌匀，冰 10 分钟更好吃"],
+ note:"夏天救命菜，五分钟，孩子也爱。"},
+{id:"eggplant",n:"蒜蓉蒸茄子",t:"veg",p:"veg",c:"purple",lv:"A",min:15,dev:["steamer"],
+ steps:["长茄子切条，摆盘，水开蒸 10 分钟","蒜末用少许热油泼香，加生抽、少许糖调成汁","蒸好的茄子倒掉盘里水，淋上蒜汁"],
+ note:"不用油炸，比红烧茄子省事也更健康。"},
+{id:"spinach",n:"芝麻菠菜",t:"veg",p:"veg",c:"green",lv:"A",min:6,dev:[],
+ steps:["菠菜洗净，开水焯 30 秒（去草酸），捞出过凉水","挤干水分，切段","加少许盐、一勺香油、一把熟芝麻拌匀"],
+ note:"焯水这步不能省，不然口感涩。"},
+{id:"pumpkin",n:"蒸南瓜",t:"veg",p:"veg",c:"orange",lv:"A",min:20,dev:["steamer"],
+ steps:["南瓜去籽切块，不用削皮","放蒸屉，水开蒸 15 分钟","筷子能戳透就好"],
+ note:"和米饭一起放电饭锅蒸屉，一锅出，省一个灶。"},
+
+{id:"wintermelon",n:"冬瓜虾皮汤",t:"soup",p:"soup",c:"white",lv:"A",min:12,dev:[],
+ steps:["冬瓜去皮切片，虾皮一小把","锅里少油，虾皮炒香，加两碗水烧开","下冬瓜煮 6 分钟，加盐、几滴香油"],
+ note:"清口，配油腻的菜刚好。"},
+{id:"seaweed-egg",n:"紫菜蛋花汤",t:"soup",p:"soup",c:"green",lv:"A",min:8,dev:[],
+ steps:["水烧开，放紫菜、虾皮","鸡蛋打散，沿锅边转圈淋入，别搅","加盐、几滴香油，关火"],
+ note:"淋蛋液后等 10 秒再动，蛋花才成片。"},
+{id:"corn-rib",n:"玉米排骨汤",t:"soup",p:"soup",c:"yellow",lv:"A",min:45,dev:["pressure"],
+ steps:["排骨焯水冲净，玉米切段，胡萝卜切块","全部放进压力锅，加姜片、两碗水","上汽压 20 分钟，自然泄压","加盐调味"],
+ note:"压一锅，汤和肉都有了，配个青菜就是一餐。"},
+{id:"tomato-soup",n:"番茄蛋汤",t:"soup",p:"soup",c:"red",lv:"A",min:10,dev:[],
+ steps:["番茄切小块，锅里少油炒出汁","加两碗水烧开","淋入蛋液，加盐、几滴香油"],
+ note:"番茄先炒出汁，汤才红才甜。"},
+
+{id:"rice",n:"米饭",t:"staple",p:"staple",c:"white",lv:"A",min:30,dev:[],
+ steps:["米淘两遍，加水到食指第一个关节","电饭锅标准档，跳闸后焖 10 分钟"],
+ note:"和蒸南瓜、蒸红薯一起做，蒸屉架上面，一锅出。"},
+{id:"multigrain",n:"杂粮饭",t:"staple",p:"staple",c:"brown",lv:"A",min:35,dev:[],
+ steps:["大米两杯 + 小米或藜麦半杯，淘净","水比平时多一点点","电饭锅标准档"],
+ note:"换掉三分之一白米，孩子通常吃不出来。"},
+{id:"tomato-noodle",n:"番茄鸡蛋面",t:"staple",p:"staple",c:"red",lv:"A",min:15,dev:[],
+ steps:["番茄切块炒出汁，加两碗水烧开","下面条，按包装时间煮","淋入蛋液，加盐、几滴香油","撒葱花"],
+ note:"一锅出，不用另外做菜。孩子最认这个。"},
+{id:"plain-noodle",n:"清汤面",t:"staple",p:"staple",c:"white",lv:"A",min:12,dev:[],
+ steps:["碗里放生抽一勺、香油几滴、葱花，冲入开水做汤底","另起锅煮面，捞进碗里","配一个煎蛋或卤蛋"],
+ note:"汤底先冲好再放面，面不糊。"},
+{id:"sweet-potato",n:"蒸红薯玉米",t:"staple",p:"staple",c:"orange",lv:"A",min:25,dev:["steamer"],
+ steps:["红薯、玉米洗净","放蒸屉，水开蒸 20 分钟","筷子能戳透就好"],
+ note:"替代一半主食，孩子当零食也吃。"},
+{id:"bun",n:"馒头（买现成）",t:"staple",p:"staple",c:"white",lv:"A",min:5,dev:[],
+ steps:["买现成的，上锅蒸 5 分钟","配菜和汤一起吃"],
+ note:"不用天天自己发面，省下的力气用在菜上。"},
+{id:"fried-rice",n:"蛋炒饭",t:"staple",p:"staple",c:"yellow",lv:"A",min:10,dev:[],
+ steps:["用隔夜饭，粒粒分开","鸡蛋先炒散盛出，再下饭炒热","倒回鸡蛋，加盐、葱花，翻匀"],
+ note:"隔夜饭才不粘。剩菜剩饭的出口。"},
+{id:"pancake",n:"手抓饼（买现成）",t:"staple",p:"staple",c:"yellow",lv:"A",min:6,dev:[],
+ steps:["冷冻饼坯直接下平底锅，不用解冻","中小火每面 2 分钟，鼓起来就翻","可打个蛋、夹片生菜和火腿"],
+ note:"卷起来就是卷饼形态，孩子觉得新鲜。"},
+
+{id:"huimian",n:"河南烩面",t:"staple",p:"staple",c:"white",lv:"A",min:20,dev:[],reg:"豫",
+ steps:["买现成烩面坯（菜市场或超市冷柜都有），羊肉切薄片","锅里水烧开，下羊肉片、海带丝、豆腐皮丝煮 3 分钟","下烩面坯抖散，煮 4 分钟","加盐、白胡椒，撒香菜，淋一勺辣椒油（孩子那碗不放）"],
+ note:"一碗里有面有肉有菜，不用另外炒菜。羊肉怕膻就换成牛肉片。"},
+{id:"zhenglumian",n:"蒸卤面",t:"staple",p:"staple",c:"brown",lv:"A",min:40,dev:["steamer"],reg:"豫",
+ steps:["鲜细面条抖散，上蒸锅蒸 15 分钟","五花肉片、豆角、芹菜下锅炒到变色，加生抽两勺、老抽半勺、一碗水烧开","蒸好的面条倒进菜里拌匀，把汤汁吸干","再上锅蒸 10 分钟，出锅拌一下"],
+ note:"河南家里最常做的一锅饭。面条要买最细的那种鲜面，蒸两遍才筋道。"},
+{id:"menmian",n:"豆角焖面",t:"staple",p:"staple",c:"brown",lv:"A",min:35,dev:[],reg:"豫",
+ steps:["五花肉片煸出油，下豆角炒 2 分钟","加生抽、老抽、盐，倒水刚好没过豆角","鲜面条平铺在豆角上，盖盖中小火焖 12 分钟","开盖把面和菜拌匀，汤汁收干"],
+ note:"全程别开盖翻动，靠蒸汽把面焖熟。糊锅就加点热水。"},
+{id:"laomian",n:"番茄鸡蛋捞面",t:"staple",p:"staple",c:"red",lv:"A",min:18,dev:[],reg:"豫",
+ steps:["番茄切块炒出汁，加两碗水烧开，淋入蛋液","另起锅煮面，捞出过一遍凉水（更筋道）","面盛碗，浇上番茄鸡蛋卤","配一瓣蒜或一点醋"],
+ note:"夏天吃这个最舒服。过凉水这步别省。"},
+{id:"gedatang",n:"西红柿疙瘩汤",t:"staple",p:"staple",c:"red",lv:"A",min:15,dev:[],reg:"豫",
+ steps:["面粉放碗里，一点一点滴水，用筷子搅成小疙瘩（不要大块）","番茄炒出汁，加两碗水烧开","下疙瘩，边下边搅，煮 3 分钟","淋蛋液，加盐、香油"],
+ note:"孩子不爱吃饭的时候做这个，好消化。疙瘩要小，大了中间夹生。"},
+{id:"jiangmian",n:"浆面条",t:"staple",p:"staple",c:"white",lv:"B",min:25,dev:[],reg:"豫",
+ steps:["买现成浆面条浆水（菜市场有），倒锅里小火加热，别大滚会溢","下面条、芹菜丁、煮黄豆、花生米","煮 5 分钟，加盐调味","盛碗淋辣椒油"],
+ note:"新菜候选。酸味重，孩子第一次多半不接受，大人吃着香。"},
+{id:"liangcanfan",n:"大米小米两掺饭",t:"staple",p:"staple",c:"yellow",lv:"A",min:30,dev:[],
+ steps:["大米两杯、小米半杯，一起淘净","加水到食指第一个关节","电饭锅标准档，跳闸焖 10 分钟"],
+ note:"河南家里的常规做法，比纯白米饭香，孩子一般不排斥。"},
+{id:"yumichen",n:"玉米糁（糊涂）",t:"staple",p:"staple",c:"yellow",lv:"A",min:25,dev:[],
+ steps:["玉米糁用凉水调开，别结块","锅里水烧开，倒入玉米糁，边倒边搅","小火煮 20 分钟，中途搅两三次防糊底"],
+ note:"配馒头和咸菜就是一顿。煮的时候容易糊锅，得看着。"},
+{id:"shaobing",n:"烧饼（买现成）",t:"staple",p:"staple",c:"brown",lv:"A",min:4,dev:[],
+ steps:["买现成的，烤箱或平底锅热 3 分钟","夹卤肉、鸡蛋或直接配菜吃"],
+ note:"郑州楼下就有，省事。配汤吃最合适。"},
+{id:"caimo",n:"烙馍（买现成）",t:"staple",p:"staple",c:"white",lv:"A",min:5,dev:[],
+ steps:["买现成烙馍，上锅蒸 2 分钟回软","卷菜吃：土豆丝、豆芽、卤肉都行"],
+ note:"卷饼形态的最佳载体，孩子自己卷着吃，参与感强。"},
+
+{id:"dasuan-tai",n:"蒜苔炒肉丝",t:"protein",p:"pork",c:"green",lv:"A",min:12,dev:[],reg:"豫",
+ steps:["瘦肉切丝，加生抽、淀粉抓匀腌 10 分钟","蒜苔切段，下锅炒 1 分钟盛出","肉丝下锅滑散炒到变色","倒回蒜苔，加盐翻炒出锅"],
+ note:"河南家常下饭菜。蒜苔别炒太久，断生就好。"},
+{id:"qincai-rou",n:"芹菜炒肉丝",t:"protein",p:"pork",c:"green",lv:"A",min:12,dev:[],
+ steps:["瘦肉切丝，用生抽、淀粉腌 10 分钟","芹菜切段，焯水 30 秒捞出","肉丝下锅炒散，加芹菜大火翻炒","加盐、少许生抽，出锅"],
+ note:"芹菜焯一下去涩味，孩子更容易接受。"},
+{id:"hongshao-jitui",n:"红烧鸡腿",t:"protein",p:"chicken",c:"brown",lv:"A",min:30,dev:[],
+ steps:["鸡腿两面划刀，冷水下锅焯 2 分钟","锅里少油，鸡腿煎到微黄，加姜片、生抽两勺、老抽半勺","倒热水没过，加一颗冰糖，中小火炖 20 分钟","大火收汁"],
+ note:"孩子最认的一道。炖上就不用管，可以同时炒菜。"},
+{id:"fanqie-niunan",n:"番茄炖牛腩",t:"protein",p:"beef",c:"red",lv:"A",min:45,dev:["pressure"],
+ steps:["牛腩切块焯水，冲净浮沫","番茄两个切块，下锅炒出汁","加牛腩、姜片、热水，压力锅上汽压 20 分钟","泄压后加盐，撒葱花"],
+ note:"番茄的酸让牛肉更烂。汤别倒，泡饭一流。"},
+{id:"doufu-pi",n:"豆腐皮炒肉",t:"protein",p:"tofu",c:"white",lv:"A",min:12,dev:[],
+ steps:["豆腐皮切条，开水烫 1 分钟捞出","肉丝用生抽、淀粉腌 10 分钟","肉丝下锅炒散，下豆腐皮翻炒","加一勺生抽、少许盐，出锅"],
+ note:"豆腐皮蛋白质高，比豆腐耐嚼，孩子嚼得动。"},
+{id:"luji-tui",n:"卤鸡腿（买现成）",t:"protein",p:"chicken",c:"brown",lv:"A",min:5,dev:[],
+ steps:["买现成卤好的，微波或蒸 2 分钟","切开方便孩子拿"],
+ note:"赶时间的时候用。不用天天自己卤。"},
+{id:"tangcu-liji",n:"糖醋里脊（空气炸锅）",t:"protein",p:"pork",c:"red",lv:"B",min:30,dev:["airfryer"],
+ steps:["里脊切条，加盐、料酒、蛋液、淀粉抓匀","表面裹一层面包糠，喷点油","空气炸锅 190 度烤 12 分钟，中途翻一次","锅里调糖醋汁（番茄酱、糖、醋各一勺）烧稠，倒进里脊翻匀"],
+ note:"新菜候选。孩子最爱，但工序多，一周最多做一次。"},
+{id:"dahuicai",n:"河南大烩菜",t:"protein",p:"tofu",c:"white",lv:"A",min:30,dev:[],reg:"豫",
+ steps:["白菜切块，豆腐切片，粉条提前泡软","五花肉片煸出油，下白菜炒软","加水、豆腐、粉条、几个丸子，炖 15 分钟","加盐、生抽，撒蒜苗"],
+ note:"一锅炖，越炖越香。冬天配馒头，孩子连汤都喝。"},
+{id:"jiachang-doufu",n:"家常豆腐",t:"protein",p:"tofu",c:"white",lv:"A",min:15,dev:[],
+ steps:["老豆腐切片，平底锅少油煎到两面微黄","青椒切块，下锅炒 1 分钟","加一勺生抽、半碗水，下豆腐小火煮 3 分钟","淋淀粉水勾薄芡"],
+ note:"豆腐先煎一下不易碎，也更容易入味。"},
+
+{id:"hongshao-daiyu",n:"红烧带鱼",t:"protein",p:"fish",c:"brown",lv:"A",min:25,dev:[],
+ steps:["带鱼段解冻擦干，两面拍一层薄面粉","平底锅少油，两面煎到微黄定型","加姜片、生抽两勺、料酒一勺、小半碗水","中小火焖 8 分钟收汁"],
+ note:"带鱼只有一根主刺，孩子吃着安全。煎定型再翻，不容易散。"},
+{id:"fanqie-yupian",n:"番茄鱼片",t:"protein",p:"fish",c:"red",lv:"A",min:20,dev:[],
+ steps:["龙利鱼柳切片，加盐、蛋清、淀粉抓匀腌 10 分钟","番茄切块炒出汁，加两碗水烧开","鱼片一片片下锅，煮 2 分钟变白就捞","加盐，撒葱花"],
+ note:"龙利鱼无刺，孩子最适合。鱼片下锅后别搅，容易碎。"},
+{id:"xiangjian-longli",n:"香煎龙利鱼",t:"protein",p:"fish",c:"white",lv:"A",min:12,dev:[],
+ steps:["龙利鱼柳解冻吸干水，抹盐和黑胡椒腌 10 分钟","平底锅少油，中火每面煎 3 分钟","出锅挤几滴柠檬汁或撒孜然"],
+ note:"全程中火，火大了外面焦里面生。配番茄酱孩子更爱。"},
+{id:"suancai-yu",n:"酸菜鱼",t:"protein",p:"fish",c:"white",lv:"B",min:35,dev:[],
+ steps:["草鱼片用盐、蛋清、淀粉腌 10 分钟（或直接买鱼片）","酸菜下锅炒香，加水烧开煮 5 分钟","鱼片下锅煮 2 分钟","撒干辣椒花椒，浇一勺热油"],
+ note:"新菜候选。辣的，孩子那份先盛出来再放辣椒。"},
+
+{id:"shousi-baocai",n:"手撕包菜",t:"veg",p:"veg",c:"green",lv:"A",min:8,dev:[],
+ steps:["包菜用手撕成片（手撕比刀切好吃），洗净沥干","锅烧到冒烟倒油，下干辣椒或蒜末","包菜下锅大火快炒 1 分半","加盐、几滴醋，出锅"],
+ note:"便宜、快、孩子接受度高。火要大，不然出水。"},
+{id:"culiu-baicai",n:"醋溜白菜",t:"veg",p:"veg",c:"white",lv:"A",min:10,dev:[],
+ steps:["白菜帮斜刀切片，叶子撕开分开","先下白菜帮炒 1 分钟，再下叶子","沿锅边淋一勺醋，加盐、少许糖","翻炒出锅"],
+ note:"帮和叶分开下，熟得才一致。"},
+{id:"kongxincai",n:"蒜蓉空心菜",t:"veg",p:"veg",c:"green",lv:"A",min:7,dev:[],
+ steps:["空心菜洗净掐段，蒜切末","锅冒烟倒油，蒜末爆香","下菜大火快炒 1 分钟","加盐，立刻出锅"],
+ note:"夏天最常见。炒久了发黑。"},
+{id:"liangban-muer",n:"凉拌木耳",t:"veg",p:"veg",c:"white",lv:"A",min:8,dev:[],cold:1,
+ steps:["木耳提前泡发，撕小朵，开水焯 1 分钟","捞出过凉水，沥干","加蒜末、生抽、醋、香油、一点糖拌匀"],
+ note:"提前泡好放冰箱，吃的时候拌一下就行。"},
+{id:"zheng-huluobo",n:"蒸胡萝卜丝",t:"veg",p:"veg",c:"orange",lv:"A",min:20,dev:["steamer"],reg:"豫",
+ steps:["胡萝卜擦丝，拌一层面粉，抖散","上蒸锅，水开蒸 8 分钟","出锅趁热抖散，拌蒜汁、香油、盐"],
+ note:"河南蒸菜。孩子当主食吃都行，比炒的更容易接受。"},
+{id:"zheng-qincaiye",n:"蒸芹菜叶",t:"veg",p:"veg",c:"green",lv:"A",min:20,dev:["steamer"],reg:"豫",
+ steps:["芹菜叶洗净沥干，拌面粉抖散","上蒸锅，水开蒸 8 分钟","出锅拌蒜汁、香油、少许盐"],
+ note:"买芹菜剩下的叶子别扔，这道最省。老人基本都会。"},
+
+{id:"luobo-paigu",n:"萝卜排骨汤",t:"soup",p:"soup",c:"white",lv:"A",min:45,dev:["pressure"],
+ steps:["排骨焯水冲净，白萝卜切滚刀块","一起放压力锅，加姜片、两碗水","上汽压 20 分钟，自然泄压","加盐、白胡椒，撒香菜"],
+ note:"冬天必备。萝卜炖透了孩子也吃。"},
+{id:"yumi-geng",n:"蛋花玉米羹",t:"soup",p:"soup",c:"yellow",lv:"A",min:10,dev:[],
+ steps:["玉米粒一碗，加水两碗煮开","淋淀粉水勾薄芡","鸡蛋打散淋入，搅出蛋花","加少许盐或糖（甜的咸的看孩子）"],
+ note:"甜的咸的都行，孩子基本都喝。"},
+{id:"suanla-tang",n:"酸辣汤",t:"soup",p:"soup",c:"brown",lv:"B",min:12,dev:[],
+ steps:["豆腐丝、木耳丝、胡萝卜丝下锅加水烧开","加生抽、醋、白胡椒，淋淀粉水","淋蛋液，撒香菜"],
+ note:"新菜候选。白胡椒少放，孩子怕辣。"}
+];
+
+var FORMS=["盖饭","拌面","饭团","卷饼","汤泡饭","菜饭同盘"];
+var PSV=["steam-egg","steamed-bass","braised-pork","beef-potato","eggplant","pumpkin","rice","multigrain","sweet-potato","corn-rib","fanqie-niunan","hongshao-jitui","luobo-paigu","zheng-huluobo","zheng-qincaiye","liangcanfan"];
+
+/* 一锅出：主食里自带荤素，选中这天就不再另配主菜和汤 */
+var ONEPOT={};
+var FULL=["tomato-noodle","plain-noodle","fried-rice","pancake","huimian","zhenglumian","menmian","laomian","gedatang","jiangmian"];
+/* 要烧水的菜排在灶上第一顺位：水开之前正好切菜 */
+var BOIL=["boiled-shrimp","tomato-noodle","plain-noodle","huimian","laomian","gedatang","jiangmian","tomato-soup","seaweed-egg","wintermelon","yumi-geng"];
+/* 主食形态族，用来推导"今天怎么吃" */
+var SKIND={rice:"rice",multigrain:"rice",liangcanfan:"rice","fried-rice":"rice",
+  "tomato-noodle":"noodle","plain-noodle":"noodle",
+  bun:"bun",shaobing:"bing",caimo:"bing",pancake:"bing",
+  "sweet-potato":"root",yumichen:"porridge"};
+
+/* 食材：[名称, 3人份用量, 单位, 分类] */
+var ING={
+"tomato-egg":[["番茄",2,"个","veg"],["鸡蛋",3,"个","meat"]],
+"steam-egg":[["鸡蛋",2,"个","meat"],["虾皮",10,"克","other"]],
+"boiled-shrimp":[["白虾",300,"克","meat"],["姜",1,"块","other"]],
+"steamed-bass":[["鲈鱼",500,"克","meat"],["姜",1,"块","other"]],
+"cola-wings":[["鸡翅",8,"个","meat"],["可乐",1,"罐","other"]],
+"mushroom-chicken":[["鸡腿肉",400,"克","meat"],["干香菇",8,"朵","other"]],
+"pork-steam-egg":[["猪肉末",150,"克","meat"],["鸡蛋",2,"个","meat"]],
+"braised-pork":[["五花肉",500,"克","meat"],["冰糖",30,"克","other"]],
+"beef-potato":[["牛腩",500,"克","meat"],["土豆",2,"个","veg"],["胡萝卜",1,"根","veg"]],
+"tofu-mince":[["嫩豆腐",1,"盒","other"],["猪肉末",100,"克","meat"]],
+"chicken-breast":[["鸡胸肉",2,"块","meat"]],
+"airfry-ribs":[["排骨",500,"克","meat"],["蒜",1,"头","veg"]],
+"shrimp-egg":[["虾仁",200,"克","meat"],["鸡蛋",3,"个","meat"],["牛奶",100,"毫升","other"]],
+"garlic-greens":[["青菜",500,"克","veg"],["蒜",1,"头","veg"]],
+"baby-cabbage":[["娃娃菜",2,"棵","veg"],["虾皮",10,"克","other"]],
+"cauliflower":[["花菜",1,"个","veg"],["番茄",2,"个","veg"]],
+"broccoli":[["西兰花",1,"个","veg"]],
+"potato-shred":[["土豆",2,"个","veg"]],
+"carrot-wood":[["胡萝卜",2,"根","veg"],["木耳",20,"克","other"]],
+"cucumber":[["黄瓜",2,"根","veg"],["蒜",1,"头","veg"]],
+"eggplant":[["长茄子",2,"根","veg"],["蒜",1,"头","veg"]],
+"spinach":[["菠菜",400,"克","veg"],["熟芝麻",1,"袋","other"]],
+"pumpkin":[["南瓜",0.5,"个","veg"]],
+"wintermelon":[["冬瓜",400,"克","veg"],["虾皮",10,"克","other"]],
+"seaweed-egg":[["紫菜",1,"包","other"],["鸡蛋",2,"个","meat"]],
+"corn-rib":[["排骨",400,"克","meat"],["玉米",2,"根","veg"],["胡萝卜",1,"根","veg"]],
+"tomato-soup":[["番茄",3,"个","veg"],["鸡蛋",2,"个","meat"]],
+"rice":[["大米",400,"克","staple"]],
+"multigrain":[["小米",200,"克","staple"]],
+"tomato-noodle":[["挂面",300,"克","staple"],["番茄",2,"个","veg"],["鸡蛋",2,"个","meat"]],
+"plain-noodle":[["挂面",300,"克","staple"],["鸡蛋",2,"个","meat"]],
+"sweet-potato":[["红薯",3,"个","veg"],["玉米",2,"根","veg"]],
+"bun":[["馒头",4,"个","staple"]],
+"fried-rice":[["隔夜米饭",400,"克","staple"],["鸡蛋",3,"个","meat"]],
+"pancake":[["手抓饼",4,"张","staple"],["鸡蛋",2,"个","meat"]],
+
+"huimian":[["羊肉片",250,"克","meat"],["烩面坯",4,"片","staple"],["海带丝",50,"克","veg"],["豆腐皮",100,"克","other"],["香菜",1,"把","veg"]],
+"zhenglumian":[["鲜细面条",500,"克","staple"],["五花肉",200,"克","meat"],["豆角",300,"克","veg"],["芹菜",200,"克","veg"]],
+"menmian":[["鲜面条",500,"克","staple"],["五花肉",150,"克","meat"],["豆角",400,"克","veg"]],
+"laomian":[["面条",400,"克","staple"],["番茄",3,"个","veg"],["鸡蛋",3,"个","meat"]],
+"gedatang":[["面粉",200,"克","staple"],["番茄",2,"个","veg"],["鸡蛋",2,"个","meat"]],
+"jiangmian":[["浆水",1000,"毫升","other"],["面条",400,"克","staple"],["芹菜",200,"克","veg"],["黄豆",50,"克","other"],["花生米",50,"克","other"]],
+"liangcanfan":[["大米",300,"克","staple"],["小米",100,"克","staple"]],
+"yumichen":[["玉米糁",200,"克","staple"]],
+"shaobing":[["烧饼",4,"个","staple"]],
+"caimo":[["烙馍",8,"张","staple"]],
+
+"dasuan-tai":[["蒜苔",300,"克","veg"],["猪瘦肉",200,"克","meat"]],
+"qincai-rou":[["芹菜",300,"克","veg"],["猪瘦肉",200,"克","meat"]],
+"hongshao-jitui":[["鸡腿",6,"个","meat"]],
+"fanqie-niunan":[["牛腩",500,"克","meat"],["番茄",3,"个","veg"]],
+"doufu-pi":[["豆腐皮",200,"克","other"],["猪瘦肉",150,"克","meat"]],
+"luji-tui":[["卤鸡腿",4,"个","meat"]],
+"tangcu-liji":[["猪里脊",400,"克","meat"],["面包糠",1,"袋","other"],["番茄酱",1,"瓶","other"]],
+"dahuicai":[["白菜",500,"克","veg"],["老豆腐",300,"克","other"],["粉条",100,"克","other"],["五花肉",150,"克","meat"],["肉丸",200,"克","meat"]],
+"jiachang-doufu":[["老豆腐",400,"克","other"],["青椒",2,"个","veg"]],
+
+"hongshao-daiyu":[["带鱼段",500,"克","meat"],["姜",1,"块","other"]],
+"fanqie-yupian":[["龙利鱼柳",400,"克","meat"],["番茄",3,"个","veg"]],
+"xiangjian-longli":[["龙利鱼柳",400,"克","meat"]],
+"suancai-yu":[["草鱼片",500,"克","meat"],["酸菜",1,"袋","other"]],
+
+"shousi-baocai":[["包菜",1,"个","veg"]],
+"culiu-baicai":[["白菜",600,"克","veg"]],
+"kongxincai":[["空心菜",500,"克","veg"]],
+"liangban-muer":[["木耳",30,"克","other"],["蒜",1,"头","veg"]],
+"zheng-huluobo":[["胡萝卜",3,"根","veg"],["面粉",100,"克","staple"]],
+"zheng-qincaiye":[["芹菜叶",300,"克","veg"],["面粉",100,"克","staple"]],
+
+"luobo-paigu":[["排骨",400,"克","meat"],["白萝卜",1,"个","veg"]],
+"yumi-geng":[["玉米粒",200,"克","veg"],["鸡蛋",1,"个","meat"]],
+"suanla-tang":[["豆腐丝",100,"克","other"],["木耳",20,"克","other"],["胡萝卜",1,"根","veg"],["鸡蛋",1,"个","meat"]]
+};
+var CATS=[["meat","肉 / 蛋 / 水产"],["veg","蔬菜"],["staple","主食 / 干货"],["other","调料 / 豆制品"]];
+(function(){
+  FULL.forEach(function(id){var d=byId(id);if(d){d.full=1;ONEPOT[id]=1;}});
+  BOIL.forEach(function(id){var d=byId(id);if(d)d.boil=1;});
+})();
+
+var KEY="lunchcard.v2";
+var DEF={age:"6-10",people:3,serve:"12:00",avoid:[],dev:["steamer"],
+  enabled:{},pref:{},hist:{},tick:{},shop:{},week:null};
+
+var S=load();
+
+function load(){
+  var base=JSON.parse(JSON.stringify(DEF));
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(!raw){
+      var old=localStorage.getItem("lunchcard.v1");
+      if(old){
+        var o=JSON.parse(old);
+        var m=Object.assign(base,o);
+        m.hist={};
+        for(var k in (o.last||{})){m.hist[k]={last:o.last[k],no:0};}
+        m.pref={};for(k in (o.pref||{})){m.pref[k]=o.pref[k];}
+        m.tick={};m.shop={};
+        return m;
+      }
+      return base;
+    }
+    return Object.assign(base,JSON.parse(raw));
+  }catch(e){return base;}
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function byId(id){for(var i=0;i<DISHES.length;i++){if(DISHES[i].id===id)return DISHES[i];}return null;}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function dayN(){return 864e5;}
+function iso(d){var y=d.getFullYear(),m=("0"+(d.getMonth()+1)).slice(-2),dd=("0"+d.getDate()).slice(-2);return y+"-"+m+"-"+dd;}
+function mondayOf(d){var x=new Date(d.getTime());var w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);x.setHours(0,0,0,0);return x;}
+function parseISO(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function gapDays(id){var h=S.hist[id];if(!h||!h.last)return 999;return Math.round((Date.now()-parseISO(h.last).getTime())/dayN());}
+function isCold(id){
+  var h=S.hist[id];if(!h)return false;
+  var g=gapDays(id);
+  /* 冷却 14 天而不是 30 天：新食物要 8-15 次接触才被接受，关太久等于永久踢出 */
+  if((h.no||0)>=2&&g<14)return true;
+  if((S.pref[id]||0)<=-4&&g<14)return true;
+  return false;
+}
+function portion(){
+  if(S.age==="3-5")return "主食半碗到一拳头，菜一手捧起来，肉半巴掌心";
+  if(S.age==="11-13")return "主食一拳半，菜两手捧满，肉一巴掌半";
+  return "主食一拳头，菜两手捧起来，肉一巴掌心大小和厚度";
+}
+function hands(x){return Math.round(x.min<=15?x.min:15+(x.min-15)*0.35);}
+function dayMinutes(d){
+  var psv=0,act=0,n=0;
+  ["protein","veg1","veg2","soup","staple"].forEach(function(k){
+    var x=byId(d[k]);if(!x)return;
+    if(x.psv){if(x.min>psv)psv=x.min;}else{act+=hands(x);n++;}
+  });
+  /* 和「今天」那页用同一套备菜估法，避免两处数字打架 */
+  act+=Math.min(12,5+n*2);
+  return {total:Math.round(Math.max(psv,act)),active:Math.round(act),passive:Math.round(psv)};
+}
+function pool(t){
+  var out=[];
+  for(var i=0;i<DISHES.length;i++){
+    var d=DISHES[i];
+    if(d.t!==t)continue;
+    if(S.enabled[d.id]===false)continue;
+    if(isCold(d.id))continue;
+    if(d.p!=="veg"&&d.p!=="staple"&&d.p!=="soup"&&S.avoid.indexOf(d.p)>=0)continue;
+    var okDev=true;
+    for(var j=0;j<d.dev.length;j++){if(S.dev.indexOf(d.dev[j])<0){okDev=false;break;}}
+    if(!okDev)continue;
+    out.push(d);
+  }
+  return out;
+}
+function scoreOf(d,now,usedWeek){
+  var s=(S.pref[d.id]||0)*2.2;
+  var g=gapDays(d.id);
+  if(g<7)s-=6;else if(g<14)s-=2.2;else if(g<21)s-=1;
+  if(usedWeek[d.id])s-=20;
+  return s;
+}
+function rank(list,now,usedWeek){
+  var arr=[];
+  for(var i=0;i<list.length;i++){arr.push({d:list[i],s:scoreOf(list[i],now,usedWeek)+(Math.random()-0.5)*2.6});}
+  arr.sort(function(a,b){return b.s-a.s;});
+  return arr;
+}
+/* 形态从主食推出来：不是随机贴标签，而是这顿饭实际怎么吃 */
+function formFor(stapleId,soupId,proteinId){
+  var s=byId(stapleId);
+  if(!s)return "菜饭同盘";
+  if(s.full)return "一锅出，端上来就能吃";
+  var k=SKIND[s.id]||"rice";
+  if(k==="rice"){
+    if(soupId)return "汤泡饭";
+    var p=byId(proteinId);
+    if(p&&(p.c==="brown"||p.c==="red"))return "盖饭";
+    if(p&&(p.c==="green"||p.c==="white"))return "饭菜分开，自己配";
+    return "菜饭同盘";
+  }
+  if(k==="noodle")return "面和卤分开，拌着吃";
+  if(k==="bun")return "馒头掰开夹菜";
+  if(k==="bing")return "卷着吃，自己动手";
+  if(k==="root")return "当点心配着菜吃";
+  if(k==="porridge")return "稀的配干的，就着菜吃";
+  return "菜饭同盘";
+}
+function shuffle(a){
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+function pick(list,now,usedWeek){if(!list.length)return null;return rank(list,now,usedWeek)[0].d;}
+
+function generate(){
+  var mon=mondayOf(new Date()),now=Date.now();
+  var used={},weekP={},weekV={},week=[];
+  var labels=["周一","周二","周三","周四","周五"];
+  var order=shuffle([0,1,2,3,4]);
+
+  /* 一锅出的主食一周 1-2 天，其余排米饭类，保证不连着一周吃面 */
+  var onePotN=Math.random()<0.55?1:2;
+  var onePotDay={};
+  for(var q=0;q<onePotN;q++){onePotDay[order[q]]=1;}
+
+  /* 汤：在不是一锅出的日子里挑两天 */
+  var free=[];
+  for(var f=0;f<order.length;f++){if(!onePotDay[order[f]])free.push(order[f]);}
+  var soupDay={};
+  if(free[0]!==undefined)soupDay[free[0]]=1;
+  if(free[1]!==undefined)soupDay[free[1]]=1;
+
+  /* 新菜不能落在一锅出那天：一锅出不配主菜，新菜就白排了 */
+  var newDay=-1;
+  for(var nd=0;nd<order.length;nd++){if(!onePotDay[order[nd]]){newDay=order[nd];break;}}
+  if(newDay<0)newDay=order[0];
+
+  /* 鱼和豆制品各排一次：只能落在非一锅出、非新菜的日子 */
+  var quota=[];
+  for(var oi=0;oi<order.length;oi++){
+    var qi=order[oi];
+    if(onePotDay[qi]||qi===newDay)continue;
+    quota.push(qi);
+  }
+  var fishDay=quota[0],tofuDay=quota[1];
+
+  /* 新菜候选：B 级且 9 天没出现，多个里随机挑一个 */
+  var newCandidate=null,ncPool=[];
+  var bp=pool("protein");
+  for(var i=0;i<bp.length;i++){var d=bp[i];if(d.lv!=="B")continue;if(gapDays(d.id)>=9)ncPool.push(d);}
+  if(ncPool.length)newCandidate=ncPool[Math.floor(Math.random()*ncPool.length)];
+
+  for(var k=0;k<5;k++){
+    var dt=new Date(mon.getTime()+k*dayN());
+    var p=null;
+
+    if(k===newDay&&newCandidate){
+      p=newCandidate;
+    }else{
+      var wantP=(k===fishDay)?"fish":((k===tofuDay)?"tofu":"");
+      var cands=pool("protein"),cp=[];
+      for(var a=0;a<cands.length;a++){
+        var c=cands[a];
+        if(c===newCandidate)continue;
+        if(used[c.id])continue;
+        if((weekP[c.p]||0)>=2)continue;
+        if(wantP&&c.p!==wantP)continue;
+        cp.push(c);
+      }
+      if(!cp.length&&wantP){
+        for(a=0;a<cands.length;a++){
+          var c2=cands[a];
+          if(c2===newCandidate||used[c2.id])continue;
+          if((weekP[c2.p]||0)<2)cp.push(c2);
+        }
+      }
+      p=pick(cp,now,used);
+    }
+
+    if(!p){
+      var fall=[],fp=pool("protein");
+      for(a=0;a<fp.length;a++){if(fp[a]!==newCandidate&&!used[fp[a].id])fall.push(fp[a]);}
+      p=pick(fall,now,used);
+    }
+    if(!p){var ap=pool("protein");p=ap[0];}
+    if(!p)break;
+
+    used[p.id]=1;weekP[p.p]=(weekP[p.p]||0)+1;
+
+    /* 蔬菜：一个绿叶 + 一个其他颜色 */
+    var greens=[],others=[];
+    var vs=pool("veg");
+    for(var b=0;b<vs.length;b++){
+      var v=vs[b];
+      if(used[v.id])continue;
+      if((weekV[v.id]||0)>=1)continue;
+      if(v.c==="green")greens.push(v);else others.push(v);
+    }
+    var v1=pick(greens.length?greens:vs,now,used);
+    if(v1){used[v1.id]=1;weekV[v1.id]=1;}
+    var v2=pick(others,now,used);
+    if(v2){used[v2.id]=1;weekV[v2.id]=1;}
+
+    /* 主食：按一锅出 / 米饭类分开排，一周不重复 */
+    var stAll=pool("staple"),stFree=[];
+    for(var si=0;si<stAll.length;si++){
+      var st=stAll[si];
+      if(used[st.id])continue;
+      if(!!ONEPOT[st.id]!==!!onePotDay[k])continue;
+      stFree.push(st);
+    }
+    if(!stFree.length){
+      for(si=0;si<stAll.length;si++){if(!used[stAll[si].id])stFree.push(stAll[si]);}
+    }
+    var sp=pick(stFree.length?stFree:stAll,now,used);
+    if(sp)used[sp.id]=1;
+
+    /* 汤 */
+    var soup=null;
+    if(soupDay[k]){
+      var su=[],sus=pool("soup");
+      for(var r=0;r<sus.length;r++){if(!used[sus[r].id])su.push(sus[r]);}
+      soup=pick(su,now,used);
+      if(soup)used[soup.id]=1;
+    }
+
+    var day={date:iso(dt),label:labels[k],form:"",
+      protein:p?p.id:"",veg1:v1?v1.id:"",veg2:v2?v2.id:"",soup:soup?soup.id:"",
+      staple:sp?sp.id:"",isNew:!!(newCandidate&&p&&p.id===newCandidate.id),fb:{}};
+
+    if(sp&&ONEPOT[sp.id]){
+      /* 一锅出本身就是一荤一素一主食，主菜、第二个菜、汤都不要再配 */
+      day.protein="";day.veg2="";day.soup="";day.isNew=false;
+    }
+    else{
+      if(dayMinutes(day).active>50)day.soup="";
+      if(dayMinutes(day).active>50)day.veg2="";
+    }
+    day.form=formFor(day.staple,day.soup,day.protein);
+    week.push(day);
+  }
+
+  S.week=week;
+  var today=iso(new Date());
+  week.forEach(function(dd){
+    ["protein","veg1","veg2","soup","staple"].forEach(function(kk){
+      if(!dd[kk])return;
+      var h=S.hist[dd[kk]]||(S.hist[dd[kk]]={no:0});
+      h.last=today;
+    });
+  });
+  S.tick={};S.shop={};
+  save();render();
+}
+
+function buildShop(){
+  var agg={};
+  (S.week||[]).forEach(function(day){
+    ["protein","veg1","veg2","soup","staple"].forEach(function(k){
+      var items=ING[day[k]];if(!items)return;
+      items.forEach(function(it){
+        var key=it[3]+"|"+it[0]+"|"+it[2];
+        if(!agg[key])agg[key]={n:it[0],u:it[2],c:it[3],q:0};
+        agg[key].q+=it[1];
+      });
+    });
+  });
+  var out={};
+  for(var k in agg){var a=agg[k];(out[a.c]=out[a.c]||[]).push(a);}
+  for(var c in out){out[c].sort(function(x,y){return y.q-x.q;});}
+  return out;
+}
+function fmtQ(a){
+  var x=a.q*(S.people||3)/3;
+  if(a.u==="克"){x=Math.max(50,Math.round(x/50)*50);return x+" 克";}
+  if(a.u==="毫升"){x=Math.max(50,Math.round(x/50)*50);return x+" 毫升";}
+  return Math.max(1,Math.ceil(x))+" "+a.u;
+}
+
+function toMin(s){var p=(s||"12:00").split(":");return (+p[0])*60+(+p[1]||0);}
+function hm(m){m=((Math.round(m)%1440)+1440)%1440;var h=Math.floor(m/60),mi=m%60;return (h<10?"0":"")+h+":"+(mi<10?"0":"")+mi;}
+function timeline(day){
+  var serve=toMin(S.serve);
+  var all=[];
+  ["protein","veg1","veg2","soup","staple"].forEach(function(k){var d=byId(day[k]);if(d)all.push(d);});
+  if(!all.length)return {items:[{t:serve,n:"开饭",d:0,serve:true}],start:serve,total:0,serve:serve};
+
+  var elec=all.filter(function(d){return d.psv;});
+  var stove=all.filter(function(d){return !d.psv;});
+
+  /* 灶上顺序：先烧水（水开前正好切下一道的料），再耗时长的，快手菜收尾 */
+  stove.sort(function(a,b){
+    var ba=a.boil?1:0,bb=b.boil?1:0;
+    if(ba!==bb)return bb-ba;
+    return hands(b)-hands(a);
+  });
+
+  var prep=Math.min(12,5+stove.length*2);
+  var cookSum=0;
+  stove.forEach(function(d){cookSum+=hands(d);});
+  /* 炒菜段锚定开饭时间，保证菜是热的；洗切紧贴它之前 */
+  var cookStart=serve-5-cookSum;
+  var prepStart=cookStart-prep;
+
+  var items=[];
+  /* 电器倒推它该上锅的时刻；如果需要比洗切还早，就先上锅再洗切 */
+  elec.forEach(function(d){
+    items.push({t:Math.min(serve-5-d.min,prepStart-1),n:d.n+" 上锅",d:d.min,passive:true,
+      sub:"先上锅，再洗切；这一段不用看着"});
+  });
+  items.push({t:prepStart,n:"洗菜、切菜、把料摆好",d:prep,
+    sub:(stove.length&&stove[0].boil)?"先把水烧上":"料摆好再开火"});
+
+  var cur=cookStart;
+  stove.forEach(function(d,i){
+    var sub="";
+    if(d.boil)sub="水开前把这道的料切好";
+    else if(i===stove.length-1)sub="最后一道，炒完直接上桌";
+    items.push({t:cur,n:d.n,d:hands(d),id:d.id,sub:sub});
+    cur+=hands(d);
+  });
+
+  items.push({t:serve,n:"开饭",d:0,serve:true});
+  items.sort(function(a,b){return a.t-b.t;});
+
+  var start=items[0].t;
+  return {items:items,start:start,total:serve-start,serve:serve,prep:prep,stoveSum:prep+cookSum};
+}
+function todayIndex(){
+  var t=iso(new Date());
+  for(var i=0;i<(S.week||[]).length;i++){if(S.week[i].date===t)return i;}
+  return -1;
+}
+
+function dishRow(id,kind,dayIdx){
+  var d=byId(id);if(!d)return "";
+  var fb=((S.week[dayIdx]||{}).fb||{})[id]||"";
+  return '<div class="dish">'+
+    '<button class="dish-main" data-dish="'+d.id+'" type="button">'+
+      '<span class="dish-n">'+esc(d.n)+(kind==='new'?'<span class="newflag">新</span>':'')+'</span>'+
+      '<span class="dish-m">'+d.min+' 分钟</span>'+
+    '</button>'+
+    '<span class="dish-r">'+
+      '<button class="pill '+(fb==="want"?"on-ok":"")+'" data-fb="want" data-d="'+d.id+'" data-i="'+dayIdx+'" type="button">想吃</button>'+
+      '<button class="pill '+(fb==="ok"?"on-mid":"")+'" data-fb="ok" data-d="'+d.id+'" data-i="'+dayIdx+'" type="button">一般</button>'+
+      '<button class="pill '+(fb==="no"?"on-bad":"")+'" data-fb="no" data-d="'+d.id+'" data-i="'+dayIdx+'" type="button">不吃</button>'+
+    '</span></div>';
+}
+
+function renderWeek(){
+  var el=document.getElementById("v-week");
+  if(!S.week||!S.week.length){
+    el.innerHTML='<div class="empty">还没排过。点上面「重新排一周」。</div>';
+    return;
+  }
+  var ti=todayIndex(),h="";
+  for(var i=0;i<S.week.length;i++){
+    var d=S.week[i],tm=dayMinutes(d);
+    h+='<div class="card">'+
+      '<div class="day-top"><span class="day-name">'+d.label+(i===ti?'<span class="today-tag">今天</span>':'')+'</span>'+
+      '<span class="day-date">'+d.date.slice(5)+'</span></div>'+
+      '<span class="form-tag">今天换个形态：'+esc(d.form)+'</span>'+
+      dishRow(d.protein,d.isNew?"new":"",i)+
+      dishRow(d.veg1,"",i)+
+      (d.veg2?dishRow(d.veg2,"",i):"")+
+      (d.soup?dishRow(d.soup,"",i):"")+
+      dishRow(d.staple,"",i)+
+      '<div class="total"><span>上桌约 <b>'+tm.total+' 分钟</b> · 动手 '+tm.active+' 分钟</span>'+
+      '<button class="pill" data-copyday="'+i+'" type="button">复制这天</button></div>'+
+      '</div>';
+  }
+  el.innerHTML=h;
+}
+
+function renderToday(){
+  var el=document.getElementById("v-today");
+  if(!S.week||!S.week.length){el.innerHTML='<div class="empty">还没排过。先去「本周」点重新排一周。</div>';return;}
+  var ti=todayIndex(),preview=false;
+  if(ti<0){ti=0;preview=true;}
+  var day=S.week[ti],tl=timeline(day);
+  var now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
+  var h='<div class="tl-hero"><div class="big">'+day.label+' · '+S.serve+' 开饭</div>'+
+    '<div class="meta">'+day.date+' · '+hm(tl.start)+' 开始动手，全程 '+Math.round(tl.total)+' 分钟，其中站在灶前约 '+Math.round(tl.stoveSum||0)+' 分钟'+
+    (preview?' · 今天不在排程里，先看这天的流程':'')+'</div>';
+  if(!preview&&nowMin>tl.start&&nowMin<toMin(S.serve)){
+    h+='<div class="warnline">现在 '+hm(nowMin)+' 了，按计划 '+hm(tl.start)+' 就该动手，先去把菜洗了。</div>';
+  }
+  h+='</div>';
+
+  h+='<div class="card"><ul class="tl">';
+  tl.items.forEach(function(it,idx){
+    var key=day.date+"|"+idx,done=!!S.tick[key];
+    var rel=tl.items[tl.items.length-1].t-it.t;
+    var meta=[];
+    if(!it.serve&&rel>0)meta.push("开饭前 "+rel+" 分钟");
+    if(it.d)meta.push("约 "+it.d+" 分钟");
+    if(it.passive)meta.push("电器并行，不占人");
+    if(it.sub)meta.push(it.sub);
+    h+='<li class="'+(it.serve?'serve ':'')+(it.passive?'passive ':'')+(done?'done':'')+'">'+
+      '<span class="t">'+hm(it.t)+'</span>'+
+      '<span class="b"><span class="n">'+esc(it.n)+'</span>'+
+      (meta.length?'<span class="d">'+esc(meta.join(" · "))+'</span>':'')+'</span>'+
+      '<button class="tick" data-tick="'+key+'" type="button" aria-label="标记这一步完成">✓</button>'+
+      '</li>';
+  });
+  h+='</ul></div>';
+
+  h+='<h2>今天这几道，问一句孩子</h2><div class="card">'+
+    dishRow(day.protein,day.isNew?"new":"",ti)+
+    dishRow(day.veg1,"",ti)+
+    (day.veg2?dishRow(day.veg2,"",ti):"")+
+    (day.soup?dishRow(day.soup,"",ti):"")+
+    dishRow(day.staple,"",ti)+'</div>';
+
+  h+='<div class="bar"><button class="btn" data-copytoday="1" type="button">把流程发给做饭的人</button></div>';
+  el.innerHTML=h;
+}
+
+function renderShop(){
+  var el=document.getElementById("v-shop");
+  if(!S.week||!S.week.length){el.innerHTML='<div class="empty">排完一周，清单会自己出来。</div>';return;}
+  var g=buildShop();
+  var h='<p class="hint">按 '+S.people+' 人份算的量，跟着这周的菜单自动汇总。买一样划掉一样，划掉的会记住。</p>';
+  var total=0,got=0;
+  CATS.forEach(function(c){
+    var list=g[c[0]];
+    if(!list||!list.length)return;
+    h+='<div class="shop-group"><div class="shop-h">'+c[1]+'</div>';
+    list.forEach(function(a){
+      total++;
+      var on=!!S.shop[a.n];
+      if(on)got++;
+      h+='<button class="shop-i '+(on?'got':'')+'" data-shop="'+esc(a.n)+'" type="button">'+
+        '<span class="box">✓</span><span class="nm">'+esc(a.n)+'</span><span class="q">'+fmtQ(a)+'</span></button>';
+    });
+    h+='</div>';
+  });
+  h+='<div class="card"><div class="row"><span class="k">已买</span><span class="v">'+got+' / '+total+' 样</span></div>'+
+     '<div class="row"><span class="k">常备不用买</span><span class="v">油 盐 生抽 老抽 醋 淀粉 香油 料酒</span></div></div>';
+  h+='<div class="bar no-print"><button class="btn ghost" data-copyshop="1" type="button">复制清单发群里</button>'+
+     '<button class="btn ghost" data-resetshop="1" type="button">清空勾选</button></div>';
+  el.innerHTML=h;
+}
+
+function renderLib(){
+  var el=document.getElementById("v-lib");
+  var groups=[["protein","主菜 / 蛋白"],["veg","蔬菜"],["soup","汤"],["staple","主食"]];
+  var h='<p class="hint">只勾家里老人真的会做的。勾得越准，排出来的单子越能落地。标「豫」的是河南家常，标「新」的一周最多进一道。连续两次「不吃」的菜冷却 14 天，点一下可以提前解除。</p>';
+  for(var gi=0;gi<groups.length;gi++){
+    var cnt=0;
+    for(var ci=0;ci<DISHES.length;ci++){if(DISHES[ci].t===groups[gi][0])cnt++;}
+    h+='<h2>'+groups[gi][1]+' <span class="cnt">'+cnt+' 道</span></h2><div class="chips">';
+    for(var i=0;i<DISHES.length;i++){
+      var d=DISHES[i];
+      if(d.t!==groups[gi][0])continue;
+      var on=S.enabled[d.id]!==false;
+      var cold=isCold(d.id);
+      var left=cold?Math.max(1,14-gapDays(d.id)):0;
+      h+='<button class="chip '+(on?"on":"off")+'" data-tog="'+d.id+'" type="button">'+esc(d.n)+
+        (d.reg?'<span class="tag">豫</span>':'')+
+        (d.lv==="B"?'<span class="tag">新</span>':'')+
+        (cold?'<span class="tag">冷却中 '+left+' 天</span>':'')+'</button>';
+    }
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
+function renderSet(){
+  var el=document.getElementById("v-set");
+  var av=[["egg","鸡蛋"],["shrimp","虾"],["fish","鱼"],["lamb","羊肉"],["pork","猪肉"],["chicken","鸡肉"],["beef","牛肉"],["tofu","豆制品"]];
+  var dv=[["steamer","蒸锅"],["pressure","压力锅"],["airfryer","空气炸锅"],["oven","烤箱"]];
+  var h='<h2>家里几个人吃饭</h2><div class="chips">';
+  [2,3,4,5].forEach(function(n){h+='<button class="chip '+(S.people===n?"on":"")+'" data-people="'+n+'" type="button">'+n+' 人</button>';});
+  h+='</div><p class="hint">只影响买菜的量，不影响菜单。</p>';
+
+  h+='<h2>几点开饭</h2><div class="chips">';
+  ["11:30","12:00","12:30"].forEach(function(t){h+='<button class="chip '+(S.serve===t?"on":"")+'" data-serve="'+t+'" type="button">'+t+'</button>';});
+  h+='</div><p class="hint">「今天」那一页会从开饭时间倒着排，告诉老人几点该动手。</p>';
+
+  h+='<h2>孩子年龄</h2><div class="chips">';
+  ["3-5","6-10","11-13"].forEach(function(a){h+='<button class="chip '+(S.age===a?"on":"")+'" data-age="'+a+'" type="button">'+a+' 岁</button>';});
+  h+='</div><p class="hint">按《中国学龄儿童膳食指南（2022）》，6-10 岁每天蔬菜不少于 300 克、畜禽肉 40 克、水产品 40 克、蛋 25-40 克、奶 300 克；午餐占全天能量约 30%-40%。这份单子只保证「一荤一素一主食 + 隔天一个汤」的结构，具体克数用下面这个手势估。</p>';
+  h+='<div class="gesture"><div><b>主食</b>'+(S.age==="3-5"?"半碗到一拳头":S.age==="11-13"?"一拳半":"一拳头到一拳半")+'</div><div><b>蔬菜</b>'+(S.age==="3-5"?"一手捧":"两手捧起来")+'</div><div><b>肉 / 鱼 / 蛋</b>'+(S.age==="3-5"?"半巴掌心":S.age==="11-13"?"一巴掌半":"一巴掌心")+'</div></div>';
+
+  h+='<h2>忌口 / 过敏</h2><div class="chips">';
+  av.forEach(function(x){
+    var on=S.avoid.indexOf(x[0])>=0;
+    h+='<button class="chip '+(on?"on":"")+'" data-av="'+x[0]+'" type="button">'+x[1]+'</button>';
+  });
+  h+='</div><p class="hint">勾上的会从菜单里彻底排除，不是「少放」。过敏的孩子要按这个走。</p>';
+
+  h+='<h2>家里有的厨具</h2><div class="chips">';
+  dv.forEach(function(x){
+    var on=S.dev.indexOf(x[0])>=0;
+    h+='<button class="chip '+(on?"on":"")+'" data-dev="'+x[0]+'" type="button">'+x[1]+'</button>';
+  });
+  h+='</div><p class="hint">没勾的厨具对应的菜不会出现在菜单里。没有空气炸锅就别勾，免得老人为难。</p>';
+
+  h+='<h2>发给家人</h2><p class="hint">每台手机是自己排自己的一周。只把网址发过去，两边看到的是两套不同的饭。点下面这个按钮，菜单会装进链接里，家人打开就是你排好的这一周。</p>';
+  h+='<div class="bar no-print"><button class="btn" id="btnShare" type="button">复制这一周的链接</button></div>';
+
+  h+='<h2>换手机、换浏览器</h2><p class="hint">数据只存在这台设备的浏览器里。导出成一个文件，换设备时再导回来，孩子的口味记录就不会丢。</p>';
+  h+='<div class="bar no-print"><button class="btn ghost" id="btnExport" type="button">导出备份</button>'+
+     '<button class="btn ghost" id="btnImport" type="button">导入备份</button>'+
+     '<input type="file" id="fileImport" accept=".json,application/json" style="display:none"></div>';
+
+  h+='<h2>关于这份单子</h2><p class="hint">它是规则排程，不是大模型。硬规矩：① 一周内同一道菜不重复，同一蛋白来源不超过两次，另外每周固定安排一次鱼、一次豆制品；② 每天至少一个绿叶菜；③ 新菜一周最多一道，且与上次间隔 9 天以上，且不会落在一锅出那天；④ 孩子说「不吃」两次的菜冷却 14 天，可以手动解除；⑤ 面、炒饭这类一锅出的主食，不再配主菜和汤。它不会给你惊喜，它给的是「不重样、老人做得动、孩子肯吃」。</p>';
+  el.innerHTML=h;
+}
+
+function render(){renderWeek();renderToday();renderShop();renderLib();renderSet();}
+
+function openDish(id){
+  var d=byId(id);if(!d)return;
+  var h='<p class="sh-title">'+esc(d.n)+'</p>'+
+    '<p class="sh-meta">约 '+d.min+' 分钟 · '+({protein:"主菜",veg:"蔬菜",soup:"汤",staple:"主食"}[d.t]||"")+'</p><ol class="steps">';
+  d.steps.forEach(function(s){h+='<li>'+esc(s)+'</li>';});
+  h+='</ol><div class="sh-note">'+esc(d.note)+'</div>'+
+    '<div class="sh-actions"><button class="btn" data-copydish="'+d.id+'" type="button">复制给做饭的人</button>'+
+    '<button class="btn ghost" data-close="1" type="button">关闭</button></div>';
+  document.getElementById("sheetBody").innerHTML=h;
+  var dlg=document.getElementById("sheet");
+  if(dlg&&dlg.showModal&&!dlg.open){dlg.showModal();}
+  else if(dlg){dlg.setAttribute("open","");}
+}
+function closeSheet(){
+  var dlg=document.getElementById("sheet");
+  if(!dlg)return;
+  if(dlg.close)dlg.close();else dlg.removeAttribute("open");
+}
+
+function dayTextOne(id){
+  var x=byId(id);if(!x)return "";
+  var out=x.n+"（约"+x.min+"分钟）\n";
+  x.steps.forEach(function(s,j){out+=(j+1)+". "+s+"\n";});
+  out+="小提示："+x.note;
+  return out;
+}
+function dayText(i){
+  var d=S.week[i];
+  var out="【"+d.label+" "+d.date+"】"+d.form+"\n";
+  var ids=[d.protein,d.veg1,d.veg2,d.soup,d.staple].filter(Boolean);
+  for(var k=0;k<ids.length;k++){
+    var x=byId(ids[k]);if(!x)continue;
+    out+="\n· "+x.n+"（约"+x.min+"分钟）\n";
+    x.steps.forEach(function(s,j){out+="  "+(j+1)+". "+s+"\n";});
+  }
+  out+="\n份量："+portion()+"。";
+  var tm=dayMinutes(d);
+  out+="\n时间：上桌约 "+tm.total+" 分钟（动手 "+tm.active+" 分钟，其余是电饭锅/蒸锅自己走）。";
+  return out;
+}
+function todayText(){
+  var ti=todayIndex();if(ti<0)ti=0;
+  var day=S.week[ti],tl=timeline(day);
+  var out="【"+day.label+" 午饭流程】"+S.serve+" 开饭\n";
+  tl.items.forEach(function(it){
+    var rel=tl.serve-it.t;
+    out+=hm(it.t)+"  "+it.n;
+    if(!it.serve&&rel>0)out+="（开饭前 "+rel+" 分钟";
+    if(it.d)out+=(it.serve?"（":"")+"约 "+it.d+" 分钟";
+    if(!it.serve)out+="）";
+    out+="\n";
+  });
+  out+="\n份量："+portion()+"。";
+  return out;
+}
+function shopText(){
+  var g=buildShop(),out="【本周买菜清单】"+(S.people||3)+" 人份\n";
+  CATS.forEach(function(c){
+    var list=g[c[0]];if(!list||!list.length)return;
+    out+="\n"+c[1]+"\n";
+    list.forEach(function(a){out+="· "+a.n+" "+fmtQ(a)+"\n";});
+  });
+  out+="\n常备：油 盐 生抽 老抽 醋 淀粉 香油 料酒";
+  return out;
+}
+
+function copyText(t){
+  var done=function(){toast("已复制，去微信粘贴");};
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(done,function(){fallback(t);});
+      return;
+    }
+  }catch(e){}
+  fallback(t);
+}
+function fallback(t){
+  var ok=false;
+  try{
+    var ta=document.createElement("textarea");
+    ta.value=t;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();
+    ok=document.execCommand("copy");
+    document.body.removeChild(ta);
+  }catch(e){ok=false;}
+  if(ok){toast("已复制，去微信粘贴");return;}
+  manualCopy(t);
+}
+/* 本地文件打开时浏览器不给剪贴板权限，只能让用户长按复制 */
+function manualCopy(t){
+  document.getElementById("sheetBody").innerHTML=
+    '<p class="sh-title">手动复制</p>'+
+    '<p class="sh-meta">这个浏览器不给剪贴板权限（从本地文件打开时会这样）。长按下面文字，全选，再复制。</p>'+
+    '<textarea id="mcBox" readonly style="width:100%;height:44vh;font:14px/1.7 inherit;padding:12px;border:1px solid var(--line);border-radius:10px;resize:none;background:var(--bg);color:var(--ink)">'+esc(t)+'</textarea>'+
+    '<div class="sh-actions"><button class="btn" data-close="1" type="button">好了</button></div>';
+  var dlg=document.getElementById("sheet");
+  if(dlg&&dlg.showModal&&!dlg.open)dlg.showModal();
+  else if(dlg)dlg.setAttribute("open","");
+  var box=document.getElementById("mcBox");
+  if(box){box.focus();box.select();}
+}
+var toastTimer=null;
+function toast(msg){
+  var t=document.getElementById("toast");
+  if(!t){
+    t=document.createElement("div");t.id="toast";
+    t.style.cssText="position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:#2A2622;color:#fff;font-size:13px;padding:9px 16px;border-radius:10px;z-index:60;opacity:0;transition:opacity .18s";
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.opacity="1";
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.style.opacity="0";},1600);
+}
+
+function vote(id,i,val){
+  var day=S.week[i];if(!day)return;
+  var fb=day.fb||(day.fb={});
+  if(fb[id]===val){delete fb[id];}
+  else{fb[id]=val;}
+  var h=S.hist[id]||(S.hist[id]={no:0});
+  var cur=S.pref[id]||0;
+  if(fb[id]==="want"){S.pref[id]=Math.min(cur+1,5);h.no=0;}
+  else if(fb[id]==="no"){S.pref[id]=Math.max(cur-2,-5);h.no=(h.no||0)+1;h.last=iso(new Date());}
+  else if(fb[id]==="ok"){S.pref[id]=cur>0?cur-1:(cur<0?cur+1:0);h.no=0;}
+  save();renderWeek();renderToday();renderLib();
+}
+
+function exportData(){
+  try{
+    var blob=new Blob([JSON.stringify(S)],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url;a.download="lunchcard-backup.json";
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},3000);
+    toast("已导出备份文件");
+  }catch(e){toast("导出失败，换浏览器试试");}
+}
+function importData(file){
+  try{
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var o=JSON.parse(String(r.result));
+        if(!o||typeof o!=="object")throw new Error("bad");
+        S=Object.assign(JSON.parse(JSON.stringify(DEF)),o);
+        save();render();toast("导入成功");
+      }catch(e){toast("文件读不出来，可能不是备份文件");}
+    };
+    r.readAsText(file);
+  }catch(e){toast("导入失败");}
+}
+
+/* ---------- 把这一周塞进网址，发给家人 ----------
+   每台手机的排程都是各自随机的，同一周看到的是七顿不同的饭。
+   所以「发个链接过去」必须把菜单本身带上，否则老人和妈妈看的两套。 */
+function b64e(s){return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function b64d(s){
+  var t=String(s).replace(/-/g,"+").replace(/_/g,"/");
+  while(t.length%4)t+="=";
+  return atob(t);
+}
+function sharePayload(){
+  var w=(S.week||[]).map(function(d){
+    return [d.date,d.protein||"",d.veg1||"",d.veg2||"",d.soup||"",d.staple||"",d.isNew?1:0];
+  });
+  return {v:2,a:S.age,p:S.people,s:S.serve,w:w};
+}
+function shareLink(){
+  if(location.protocol==="file:"){toast("本地文件只能在这台机器上看，先放到网上再分享");return "";}
+  if(!S.week||!S.week.length){toast("先排一周再分享");return "";}
+  return location.origin+location.pathname+"#m="+b64e(JSON.stringify(sharePayload()));
+}
+function applyHash(){
+  var h=location.hash||"";
+  if(h.indexOf("#m=")!==0)return false;
+  var o;
+  try{o=JSON.parse(b64d(h.slice(3)));}catch(e){return false;}
+  if(!o||!o.w||!o.w.length)return false;
+
+  /* 链接会被存成主屏幕图标，一直带着 #m=。
+     如果不管日期就照单全收，家人会永远停在被分享的那一周。
+     只认「本周」和「下周一」（周日晚上提前发给家人），过期就交回本地重排。 */
+  var first=(o.w[0]||[])[0];
+  if(!first)return false;
+  var sMon=mondayOf(parseISO(first)),tMon=mondayOf(new Date());
+  var gapW=Math.round((sMon.getTime()-tMon.getTime())/(7*dayN()));
+  if(gapW<0||gapW>1)return false;
+
+  var names=["周一","周二","周三","周四","周五","周六","周日"];
+  var week=[];
+  for(var i=0;i<o.w.length&&i<7;i++){
+    var r=o.w[i]||[];
+    var fix=function(x){return (x&&byId(x))?x:"";};
+    var day={date:r[0]||"",label:names[i],
+      protein:fix(r[1]),veg1:fix(r[2]),veg2:fix(r[3]),soup:fix(r[4]),staple:fix(r[5]),
+      isNew:!!r[6],fb:{},form:""};
+    day.form=formFor(day.staple,day.soup,day.protein);
+    week.push(day);
+  }
+  if(!week.length)return false;
+  S.week=week;
+  if(o.p)S.people=+o.p||S.people;
+  if(o.s)S.serve=o.s;
+  if(o.a)S.age=o.a;
+  S.tick={};S.shop={};
+  save();
+  return true;
+}
+
+function init(){
+  /* 剪贴板只在 https 或 localhost 下才给，先说清楚，别让人以为按钮坏了 */
+  if(!window.isSecureContext){
+    var tb=document.getElementById("insecureTip");
+    if(tb){
+      tb.style.display="block";
+      tb.textContent=(location.protocol==="file:")
+        ? "这一页是从本地文件打开的，浏览器会禁掉「复制」和「分享」。要让家人正常用，把网址发给他们用浏览器打开。"
+        : "这个地址不是 https，浏览器会禁掉「复制」按钮。长按文字也能复制；要一键复制，换成 https 地址。";
+    }
+  }
+
+  document.addEventListener("click",function(e){
+    var t=e.target.closest("[data-v],[data-dish],[data-fb],[data-tog],[data-age],[data-av],[data-dev],[data-copyday],[data-copydish],[data-close],[data-tick],[data-shop],[data-people],[data-serve],[data-copytoday],[data-copyshop],[data-resetshop]");
+    if(!t)return;
+    var ds=t.dataset;
+    if(ds.v){
+      document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.v===ds.v);});
+      document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("on",v.id==="v-"+ds.v);});
+      window.scrollTo(0,0);return;
+    }
+    if(ds.dish){openDish(ds.dish);return;}
+    if(ds.close){closeSheet();return;}
+    if(ds.copydish){copyText(dayTextOne(ds.copydish));return;}
+    if(ds.copyday){copyText(dayText(+ds.copyday));return;}
+    if(ds.copytoday){copyText(todayText());return;}
+    if(ds.copyshop){copyText(shopText());return;}
+    if(ds.resetshop){S.shop={};save();renderShop();return;}
+    if(ds.fb){vote(ds.d,+ds.i,ds.fb);return;}
+    if(ds.tick){S.tick[ds.tick]=!S.tick[ds.tick];save();renderToday();return;}
+    if(ds.shop){S.shop[ds.shop]=!S.shop[ds.shop];save();renderShop();return;}
+    if(ds.tog){
+      var k=ds.tog;
+      /* 冷却中的菜点一下先解除冷却，再点才是启用/停用 */
+      if(isCold(k)){
+        S.hist[k]={no:0,last:(S.hist[k]||{}).last};
+        S.pref[k]=0;save();renderLib();
+        toast("已解除冷却，下次排程会再试一次");
+        return;
+      }
+      S.enabled[k]=S.enabled[k]===false?true:false;save();renderLib();return;
+    }
+    if(ds.people){S.people=+ds.people;save();renderSet();renderShop();return;}
+    if(ds.serve){S.serve=ds.serve;save();renderSet();renderToday();return;}
+    if(ds.age){S.age=ds.age;save();renderSet();return;}
+    if(ds.av){
+      var a=ds.av,ix=S.avoid.indexOf(a);
+      if(ix>=0)S.avoid.splice(ix,1);else S.avoid.push(a);
+      save();renderSet();renderLib();return;
+    }
+    if(ds.dev){
+      var dv=ds.dev,jx=S.dev.indexOf(dv);
+      if(jx>=0)S.dev.splice(jx,1);else S.dev.push(dv);
+      save();renderSet();return;
+    }
+  });
+
+  document.getElementById("btnGen").addEventListener("click",function(){generate();toast("重排好了，顺手看看「今天」");});
+  document.getElementById("btnCopyAll").addEventListener("click",function(){
+    if(!S.week||!S.week.length){toast("先排一周");return;}
+    var out="本周午饭安排\n";
+    for(var i=0;i<S.week.length;i++){out+="\n"+dayText(i);}
+    copyText(out);
+  });
+  document.getElementById("btnPrint").addEventListener("click",function(){window.print();});
+
+  document.addEventListener("click",function(e){
+    if(e.target.id==="btnExport")exportData();
+    if(e.target.id==="btnShare"){var _u=shareLink();if(_u)copyText(_u);}
+    if(e.target.id==="btnImport"){var f=document.getElementById("fileImport");if(f)f.click();}
+    if(e.target.id==="fileImport"){
+      var fl=e.target.files&&e.target.files[0];
+      if(fl)importData(fl);
+    }
+  });
+
+  var dlg=document.getElementById("sheet");
+  if(dlg){
+    dlg.addEventListener("click",function(e){
+      if(e.target===dlg)closeSheet();
+    });
+  }
+
+  /* 从家人发来的链接进来：就用那一周的菜单，别再自己随机排一遍 */
+  if(applyHash()){
+    render();
+    setTimeout(function(){toast("这是家人分享的一周菜单");},500);
+    return;
+  }
+
+  var had=!!(S.week&&S.week.length);
+  var curMon=iso(mondayOf(new Date()));
+  var stale=had&&S.week[0].date!==curMon;
+  if(!had||stale){
+    generate();
+    if(stale)setTimeout(function(){toast("新的一周，菜单已经自动排好");},400);
+  }else{
+    render();
+  }
+}
+
+
+for(var _pi=0;_pi<PSV.length;_pi++){var _pd=byId(PSV[_pi]);if(_pd)_pd.psv=1;}
+init();
+}catch(err){
+  if(window.console)console.error(err);
+  var el=document.getElementById("v-week");
+  if(el)el.innerHTML='<div class="empty">页面出了点问题，刷新试试。</div>';
+}
+})();
+</script>
+</body>
+</html>
