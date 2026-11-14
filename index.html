@@ -119,6 +119,13 @@ nav button.on .dot{background:var(--brand)}
 .shop-i .q{color:var(--ink2);font-size:calc(13.5px * var(--fs,1));font-variant-numeric:tabular-nums;white-space:nowrap}
 
 .hint{font-size:calc(12.5px * var(--fs,1));color:var(--ink3);line-height:1.65;margin:8px 0}
+/* 激活码很长（一百多个字符），用 textarea 平铺，别让人在一个单行框里左右找 */
+.inp{width:100%;box-sizing:border-box;margin:8px 0 0;padding:10px 11px;border:1px solid var(--line);
+  border-radius:10px;background:#fff;color:var(--ink);font-size:calc(12.5px * var(--fs,1));line-height:1.55;
+  resize:vertical;font-family:inherit}
+.inp.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}
+.inp:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+label.pk{display:block;font-size:calc(13px * var(--fs,1));color:var(--ink2);font-weight:600;margin:0 0 2px}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 2px}
 .chip{font-size:calc(13.5px * var(--fs,1));padding:9px 13px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink2);
   min-height:38px;display:inline-flex;align-items:center}
@@ -811,6 +818,9 @@ var CATS=[["meat","肉 / 蛋 / 水产"],["veg","蔬菜"],["staple","主食 / 干
 })();
 
 var KEY="lunchcard.v2";
+/* 免费版能自己重排几次。放在这里是因为 load()→mig() 在下面一个语句就跑了，
+   常量必须先赋值，否则 mig 里读到的是 undefined。 */
+var FREE_REGEN=5;
 /* 菜路：河南并入北方（河南本来就在北方，单独列只是当年只在郑州用） */
 var AREAS=[["north","北方家常"],["sichuan","川渝湘鄂家常"],["jiangzhe","江浙沪家常"],["yue","粤式家常"]];
 var CUIS_LABEL={north:"北方",sichuan:"川渝湘鄂",jiangzhe:"江浙沪",yue:"粤式"};
@@ -822,7 +832,10 @@ var AREA_DESC={
 };
 var DEF={age:"6-10",adults:2,kids:1,people:3,area:"north",onboarded:false,elder:false,
   serve:"12:00",avoid:[],dev:["steamer"],
-  enabled:{},pref:{},hist:{},tick:{},shop:{},week:null};
+  enabled:{},pref:{},hist:{},tick:{},shop:{},week:null,
+  /* lic 存的是激活码原文，启动时重新验签；regen 是免费重排剩余次数；
+     areaFree 是免费版锁住的那一条菜路（第一次选的那条，不是硬编码北方） */
+  lic:"",regen:5,areaFree:""};
 
 var S=load();
 
@@ -858,6 +871,10 @@ function mig(m,raw){
   if(!raw.area)m.area="north";
   /* 河南菜路已并入北方，老用户跟着搬过去，别留在不存在的地区上 */
   if(m.area==="henan")m.area="north";
+  /* 授权：老用户升级上来给满 5 次免费重排；免费版锁住他现在用的这条菜路，
+     而不是硬编码北方——已经在用川渝湘鄂的人不该被降级 */
+  if(typeof raw.regen!=="number")m.regen=FREE_REGEN;
+  if(!raw.areaFree)m.areaFree=m.area;
   /* 有存过任何东西就是老用户，不弹引导；全新的才走四步 */
   if(raw.onboarded===undefined)m.onboarded=!!(raw.week||raw.people||raw.serve||raw.area);
   if(!m.people)m.people=(+m.adults||0)+(+m.kids||0)||3;
@@ -869,6 +886,85 @@ function applyElder(){
   var r=document.documentElement;
   if(!r||!r.classList)return;
   if(S.elder)r.classList.add("elder");else r.classList.remove("elder");
+}
+
+/* ---------- 授权：签名激活码，本地验签 ----------
+   页面里只有公钥，只能验、不能签；私钥在本机的 _lic.js 里，永远不上传。
+   存下来的是「那串码本身」，不是「已付费」这个布尔——所以改 localStorage 伪造不了，
+   想绕过只能改 JS。纯前端能做到的上限就是这个：挡转发，不挡拆包。 */
+var LIC_PUB={kty:"EC",crv:"P-256",x:"I7RVGJZVXwpcYfXqLWnPrpW1ZldqQ27GFs_GcqhTHsw",y:"tfC3XbVhWuVIuS40zKsJzKkCwCzukGpFagWLDW5oBvM"};
+var LIC_PREFIX="LP1-";
+var LIC_ON=false;
+/* 从分享链接进来的就是只读访客（老人那台手机）。他那端不出现任何付费提示、也不出现导出按钮 */
+var RO=false;
+
+function licBytes(s){
+  var t=String(s).replace(/-/g,"+").replace(/_/g,"/");
+  while(t.length%4)t+="=";
+  var raw=atob(t),out=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+  return out;
+}
+function licParts(code){
+  var t=String(code||"").replace(/\s+/g,"");
+  if(t.indexOf(LIC_PREFIX)!==0)return null;
+  /* 用「.」分隔，不能用「-」——base64url 自己的字符表里就带 -，切不干净 */
+  var p=t.slice(LIC_PREFIX.length).split(".");
+  if(p.length!==2||!p[0]||!p[1])return null;
+  return {payload:p[0],sig:p[1]};
+}
+function licPayload(code){
+  var p=licParts(code);if(!p)return "";
+  try{return atob(p.payload.replace(/-/g,"+").replace(/_/g,"/"));}catch(e){return "";}
+}
+function licBatch(code){return (licPayload(code).split("|")[1]||"");}
+function licVerify(code){
+  var p=licParts(code);
+  if(!p)return Promise.resolve(false);
+  var sub=(typeof crypto!=="undefined"&&crypto.subtle)||null;
+  /* 老浏览器 / 本地 file:// 打开时可能没有 WebCrypto：当没激活，但别崩 */
+  if(!sub)return Promise.resolve(false);
+  if((licPayload(code).split("|")[0]||"")!=="1")return Promise.resolve(false);
+  var data=licBytes(p.payload),sig=licBytes(p.sig);
+  return sub.importKey("jwk",LIC_PUB,{name:"ECDSA",namedCurve:"P-256"},false,["verify"])
+    .then(function(k){return sub.verify({name:"ECDSA",hash:"SHA-256"},k,sig,data);})
+    .then(function(ok){return !!ok;})
+    .catch(function(){return false;});
+}
+/* 每次启动重新验一遍：本地只存码，不存结论 */
+function licCheck(){
+  if(!S.lic){LIC_ON=false;return Promise.resolve(false);}
+  /* 没有 WebCrypto（老浏览器、个别本地打开的情况）：当没激活，但**不能清掉码**，
+     否则人换回正常浏览器打开就白买了 */
+  if(!(typeof crypto!=="undefined"&&crypto.subtle)){LIC_ON=false;return Promise.resolve(false);}
+  return licVerify(S.lic).then(function(ok){
+    LIC_ON=!!ok;
+    if(!ok){S.lic="";save();}
+    return LIC_ON;
+  });
+}
+function licOn(){return LIC_ON;}
+function regenLeft(){
+  var n=S.regen;
+  return (typeof n==="number")?Math.max(0,n):FREE_REGEN;
+}
+/* 只有人主动点「重新排一周」才扣次数；跨周自动重排不扣，否则一个月就耗光、产品变砖 */
+function spendRegen(){
+  if(LIC_ON)return true;
+  var n=regenLeft();
+  if(n<=0)return false;
+  S.regen=n-1;save();
+  return true;
+}
+function canArea(a){
+  /* 老人那端（RO）不拦：他手机上点不出付费提示，切了也不会重排，无所谓 */
+  if(LIC_ON||RO)return true;
+  if(!S.areaFree)return true;
+  return a===S.areaFree;
+}
+function canCopy(){return LIC_ON;}
+function payTip(){
+  toast("文字导出是完整版的功能。到「设置」最下面输入激活码就能用");
 }
 function byId(id){for(var i=0;i<DISHES.length;i++){if(DISHES[i].id===id)return DISHES[i];}return null;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
@@ -1111,6 +1207,12 @@ function generate(){
     if(sp&&ONEPOT[sp.id]){
       /* 一锅出本身就是一荤一素一主食，主菜、第二个菜、汤都不要再配 */
       day.protein="";day.veg2="";day.soup="";day.isNew=false;
+      /* 但这三格前面已经挑过、也占了名额（鱼和豆制品每周各一次、蔬菜一周不重样）。
+         占了却不上桌，就等于把这周的配额白吃一口——实测约 0.3% 的周会因此排不出鱼。
+         既然不上桌，名额和去重标记都还回去。 */
+      if(p){if(used[p.id])used[p.id]=0;weekP[p.p]=Math.max(0,(weekP[p.p]||0)-1);}
+      if(v2){if(used[v2.id])used[v2.id]=0;weekV[v2.id]=0;}
+      if(soup){if(used[soup.id])used[soup.id]=0;}
     }
     else{
       if(dayMinutes(day).active>50)day.soup="";
@@ -1235,7 +1337,8 @@ function renderWeek(){
   }
   var ti=todayIndex(),h="";
   /* 两种发法：文字贴群里照着做；链接让对方手机上看到同一周，但只认本周和下周 */
-  h+='<p class="hint" style="margin-top:0">「发链接」让对方手机上看到同一周，只在本周和下周内有效。</p>';
+  h+='<p class="hint" style="margin-top:0">「发链接」让对方手机上看到同一周，只在本周和下周内有效。'+
+    (RO?"":(LIC_ON?"":"免费版还能自己重排 "+regenLeft()+" 次。"))+'</p>';
   for(var i=0;i<S.week.length;i++){
     var d=S.week[i],tm=dayMinutes(d);
     h+='<div class="card">'+
@@ -1248,7 +1351,8 @@ function renderWeek(){
       (d.soup?dishRow(d.soup,"",i):"")+
       dishRow(d.staple,"",i)+
       '<div class="total"><span>上桌约 <b>'+tm.total+' 分钟</b> · 动手 '+tm.active+' 分钟</span>'+
-      '<button class="pill" data-copyday="'+i+'" type="button">复制这天</button></div>'+
+      (RO?"":'<button class="pill" data-copyday="'+i+'" type="button">复制这天</button>')+
+      '</div>'+
       '</div>';
   }
   el.innerHTML=h;
@@ -1302,7 +1406,7 @@ function renderToday(){
     (day.soup?dishRow(day.soup,"",ti):"")+
     dishRow(day.staple,"",ti)+'</div>';
 
-  h+='<div class="bar"><button class="btn" data-copytoday="1" type="button">把流程发给做饭的人</button></div>';
+  if(!RO)h+='<div class="bar"><button class="btn" data-copytoday="1" type="button">把流程发给做饭的人</button></div>';
   el.innerHTML=h;
 }
 
@@ -1327,7 +1431,8 @@ function renderShop(){
   });
   h+='<div class="card"><div class="row"><span class="k">已买</span><span class="v">'+got+' / '+total+' 样</span></div>'+
      '<p class="hint" style="margin:6px 0 0">常备不用买：油、盐、生抽、老抽、醋、淀粉、香油、料酒。</p></div>';
-  h+='<div class="bar no-print"><button class="btn ghost" data-copyshop="1" type="button">复制清单发群里</button>'+
+  h+='<div class="bar no-print">'+
+     (RO?"":'<button class="btn ghost" data-copyshop="1" type="button">复制清单发群里</button>')+
      '<button class="btn ghost" data-resetshop="1" type="button">清空勾选</button></div>';
   el.innerHTML=h;
 }
@@ -1396,7 +1501,8 @@ function renderSet(){
   AREAS.forEach(function(x){h+='<button class="chip '+(S.area===x[0]?"on":"")+'" data-area="'+x[0]+'" type="button">'+x[1]+'</button>';});
   h+='</div><p class="hint">换菜路，菜库跟着换，已经排好的一周要点「重新排一周」才生效。'+AREAS.map(function(x){
     return x[1].replace("家常","")+' '+libCount(x[0])+' 道';
-  }).join('、')+'。还会陆续补。</p>';
+  }).join('、')+'。还会陆续补。'+
+    (LIC_ON||RO?"":'免费版锁定在「'+esc(S.areaFree||S.area)+'」这一条，换别的要激活。')+'</p>';
 
   h+='<h2>忌口 / 过敏</h2><div class="chips">';
   av.forEach(function(x){
@@ -1415,11 +1521,35 @@ function renderSet(){
   h+='<h2>重新设置</h2><p class="hint">家里人变了、搬了地方、或者一开始选错了，把开头那几个问题再答一遍。</p>'+
     '<div class="bar no-print"><button class="btn ghost" id="btnRedo" type="button">重新回答一遍</button></div>';
 
+  /* 授权放在最后：不挡路，需要的人自己找得到；老人那端（RO）整块都不出现 */
+  if(!RO){
+    h+='<h2>完整版</h2>';
+    if(LIC_ON){
+      h+='<div class="card"><div class="row"><span class="k">状态</span><span class="v">已解锁</span></div>'+
+        '<p class="hint" style="margin:6px 0 0">无限次重排、四条菜路随便切、整周发文字、买菜清单导出都开了'+
+        (licBatch(S.lic)?'（批次 '+esc(licBatch(S.lic))+'）':'')+
+        '。换新手机输同一个码就行，不用在这台先解绑。</p></div>';
+    }else{
+      h+='<p class="hint">免费版：菜库、每道菜的做法、「今天」那张倒排时间线都能看，也能完整跑通一周；自己重排还剩 <b>'+regenLeft()+'</b> 次。</p>'+
+        '<p class="hint">完整版解锁：无限次重排、四条菜路随便切、整周发文字、买菜清单导出。</p>'+
+        '<div class="card"><label class="pk" for="licCode">激活码</label>'+
+        '<textarea id="licCode" class="inp code" rows="3" placeholder="LP1-… 整段粘贴，中间那个点别丢掉" autocomplete="off" spellcheck="false"></textarea>'+
+        '<div class="bar"><button class="btn" id="btnLic" type="button">激活</button></div></div>';
+    }
+  }
+
+
   h+='<h2>关于这份单子</h2><p class="hint">它是规则排程，不是大模型。硬规矩：① 一周内同一道菜不重复，同一蛋白来源不超过两次，另外每周固定安排一次鱼、一次豆制品；② 每天至少一个绿叶菜；③ 新菜一周最多一道，且与上次间隔 9 天以上，且不会落在一锅出那天；④ 孩子说「不吃」两次的菜冷却 14 天，可以手动解除；⑤ 面、炒饭这类一锅出的主食，不再配主菜和汤；⑥ 只排你选的那个菜路里的本地菜，加上全国通用的家常菜，别的地区的独有菜不进菜单。它不会给你惊喜，它给的是「不重样、老人做得动、孩子肯吃」。</p>';
   el.innerHTML=h;
 }
 
-function render(){renderWeek();renderToday();renderShop();renderLib();renderSet();}
+/* 页头那几个按钮是静态 HTML，不在 render 里，得单独按状态摆一次 */
+function applyChrome(){
+  var g=document.getElementById("btnGen"),c=document.getElementById("btnCopyAll");
+  if(g)g.style.display=RO?"none":"";
+  if(c)c.style.display=RO?"none":"";
+}
+function render(){renderWeek();renderToday();renderShop();renderLib();renderSet();applyChrome();}
 
 function openDish(id){
   var d=byId(id);if(!d)return;
@@ -1427,7 +1557,8 @@ function openDish(id){
     '<p class="sh-meta">约 '+d.min+' 分钟 · '+({protein:"主菜",veg:"蔬菜",soup:"汤",staple:"主食"}[d.t]||"")+'</p><ol class="steps">';
   d.steps.forEach(function(s){h+='<li>'+esc(s)+'</li>';});
   h+='</ol><div class="sh-note">'+esc(d.note)+'</div>'+
-    '<div class="sh-actions"><button class="btn" data-copydish="'+d.id+'" type="button">复制给做饭的人</button>'+
+    '<div class="sh-actions">'+
+    (RO?"":'<button class="btn" data-copydish="'+d.id+'" type="button">复制给做饭的人</button>')+
     '<button class="btn ghost" data-close="1" type="button">关闭</button></div>';
   document.getElementById("sheetBody").innerHTML=h;
   var dlg=document.getElementById("sheet");
@@ -1737,6 +1868,8 @@ function obFinish(){
   S.people=Math.max(1,S.adults+S.kids);
   S.age=OB.pick.age;
   S.area=OB.pick.area;
+  /* 免费版锁的就是这次选的这条菜路——锁「切换」，不锁「用」 */
+  S.areaFree=OB.pick.area;
   S.dev=OB.pick.dev.slice();
   S.onboarded=true;
   S.week=null;              /* 按新设置重排，别留着上一套 */
@@ -1778,6 +1911,9 @@ function obResult(){
 
 function init(){
   applyElder();
+  /* 验完再刷一次：本地只存码不存结论，所以启动时重算，改 localStorage 伪造不了。
+     这一下是异步的，先按「免费」渲一帧，验完立刻盖掉，肉眼看不出。 */
+  licCheck().then(function(){render();});
   /* 剪贴板只在 https 或 localhost 下才给，先说清楚，别让人以为按钮坏了 */
   if(!window.isSecureContext){
     var tb=document.getElementById("insecureTip");
@@ -1800,10 +1936,10 @@ function init(){
     }
     if(ds.dish){openDish(ds.dish);return;}
     if(ds.close){closeSheet();return;}
-    if(ds.copydish){copyText(dayTextOne(ds.copydish));return;}
-    if(ds.copyday){copyText(dayText(+ds.copyday));return;}
-    if(ds.copytoday){copyText(todayText());return;}
-    if(ds.copyshop){copyText(shopText());return;}
+    if(ds.copydish){if(!canCopy())return payTip();copyText(dayTextOne(ds.copydish));return;}
+    if(ds.copyday){if(!canCopy())return payTip();copyText(dayText(+ds.copyday));return;}
+    if(ds.copytoday){if(!canCopy())return payTip();copyText(todayText());return;}
+    if(ds.copyshop){if(!canCopy())return payTip();copyText(shopText());return;}
     if(ds.resetshop){S.shop={};save();renderShop();return;}
     if(ds.fb){vote(ds.d,+ds.i,ds.fb);return;}
     if(ds.tick){S.tick[ds.tick]=!S.tick[ds.tick];save();renderToday();return;}
@@ -1828,6 +1964,10 @@ function init(){
       save();renderSet();renderShop();return;
     }
     if(ds.area){
+      if(!canArea(ds.area)){
+        toast("换菜路是完整版的功能。免费版锁定在「"+S.areaFree+"」那条，设置里可以激活");
+        return;
+      }
       S.area=ds.area;save();renderSet();renderLib();
       toast("已换成"+areaName()+"，点「重新排一周」生效");return;
     }
@@ -1864,7 +2004,15 @@ function init(){
     }
   });
 
-  document.getElementById("btnGen").addEventListener("click",function(){generate();toast("重排好了，顺手看看「今天」");});
+  document.getElementById("btnGen").addEventListener("click",function(){
+    if(RO){toast("这是家人发来的一周菜单，要自己排就自己打开一次");return;}
+    if(!spendRegen()){
+      toast("免费版的 5 次重排用完了。设置最下面输入激活码可以解锁无限重排");
+      return;
+    }
+    generate();
+    toast(LIC_ON?"重排好了，顺手看看「今天」":"重排好了，免费版还能重排 "+regenLeft()+" 次");
+  });
   document.getElementById("btnPrint").addEventListener("click",function(){window.print();});
   /* 发文字 / 发链接都走下面那个委托监听，和重绘出来的按钮用同一条路径 */
 
@@ -1880,9 +2028,21 @@ function init(){
     if(e.target.id==="btnRedo"){obOpen();return;}
     if(e.target.id==="btnCopyAll"){
       if(!S.week||!S.week.length){toast("先排一周");return;}
+      if(!canCopy())return payTip();
       var _t="本周午饭安排\n";
       for(var _i=0;_i<S.week.length;_i++){_t+="\n"+dayText(_i);}
       copyText(_t);return;
+    }
+    if(e.target.id==="btnLic"){
+      var box=document.getElementById("licCode");
+      var code=box?String(box.value||""):"";
+      if(!code.trim()){toast("先把激活码整段粘进来");return;}
+      licVerify(code).then(function(ok){
+        if(!ok){toast("这个码没验过。要整段复制，从 LP1- 到最后一串都不能少，中间那个点也别丢");return;}
+        S.lic=code.trim();save();
+        licCheck().then(function(){render();toast("解锁了：无限重排、四条菜路随便切、文字导出都能用");});
+      });
+      return;
     }
     if(e.target.id==="btnShare"){var _u=shareLink();if(_u)copyText(_u);return;}
     /* 导出/导入：按钮已经从设置页撤掉了，函数和绑定留着，需要时加回两行 HTML 就能用 */
@@ -1905,6 +2065,8 @@ function init(){
   if(applyHash()){
     /* 收了家人发来的菜单就别再拦着问问题，直接让他看这一周 */
     S.onboarded=true;save();
+    /* 这是老人那台手机：整页只读，不出现重排、导出、激活这些字样 */
+    RO=true;
     render();
     setTimeout(function(){toast("这是家人分享的一周菜单");},500);
     return;
