@@ -58,6 +58,12 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
   outline:2px solid var(--brand);outline-offset:2px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;margin:12px 0}
 .day-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+/* 周次条：让人一眼知道现在看的是哪一周，也能切回本周 */
+.wkbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 4px;flex-wrap:wrap}
+.wk-lab{display:flex;align-items:baseline;gap:8px}
+.wk-lab b{font-size:calc(15px * var(--fs,1));font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.wk-lab i{font-style:normal;font-size:calc(11.5px * var(--fs,1));color:var(--brand);background:var(--brand-soft);padding:2px 8px;border-radius:6px}
+.wk-sw{display:flex;gap:6px}
 .day-name{font-size:calc(15.5px * var(--fs,1));font-weight:500}
 .day-name .today-tag{font-size:calc(10.5px * var(--fs,1));color:#fff;background:var(--brand);border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
 .day-date{font-size:calc(12.5px * var(--fs,1));color:var(--ink3)}
@@ -833,6 +839,8 @@ var AREA_DESC={
 var DEF={age:"6-10",adults:2,kids:1,people:3,area:"north",onboarded:false,elder:false,
   serve:"12:00",avoid:[],dev:["steamer"],
   enabled:{},pref:{},hist:{},tick:{},shop:{},week:null,
+  /* wcache 缓存本周和下周的排法：周末看了下周，周一不必重排 */
+  wcache:{},
   /* lic 存的是激活码原文，启动时重新验签；regen 是免费重排剩余次数；
      areaFree 是免费版锁住的那一条菜路（第一次选的那条，不是硬编码北方） */
   lic:"",regen:5,areaFree:""};
@@ -875,6 +883,7 @@ function mig(m,raw){
      而不是硬编码北方——已经在用川渝湘鄂的人不该被降级 */
   if(typeof raw.regen!=="number")m.regen=FREE_REGEN;
   if(!raw.areaFree)m.areaFree=m.area;
+  if(!raw.wcache||typeof raw.wcache!=="object")m.wcache={};
   /* 有存过任何东西就是老用户，不弹引导；全新的才走四步 */
   if(raw.onboarded===undefined)m.onboarded=!!(raw.week||raw.people||raw.serve||raw.area);
   if(!m.people)m.people=(+m.adults||0)+(+m.kids||0)||3;
@@ -972,6 +981,33 @@ function dayN(){return 864e5;}
 function iso(d){var y=d.getFullYear(),m=("0"+(d.getMonth()+1)).slice(-2),dd=("0"+d.getDate()).slice(-2);return y+"-"+m+"-"+dd;}
 function mondayOf(d){var x=new Date(d.getTime());var w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);x.setHours(0,0,0,0);return x;}
 function parseISO(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+
+/* ---------- 这一周是哪一周：周末默认看下周 ----------
+   只排周一到周五。周六周日打开时，用户真正要的是「下周一吃什么、下周买什么」，
+   所以周末直接把下周排好；等到周一打开，日期已经对上，不会重排，
+   周日看好的菜单能接着用（这正是以前最别扭的地方：周一零点偷偷换掉）。 */
+function isWeekend(){var g=new Date().getDay();return g===0||g===6;}
+function idealMon(){
+  var g=new Date().getDay(),m=mondayOf(new Date());
+  if(g===0||g===6)m=new Date(m.getTime()+7*dayN());
+  return m;
+}
+function weekMon(){return (S.week&&S.week.length)?mondayOf(parseISO(S.week[0].date)):null;}
+function weekDiff(){
+  var w=weekMon();if(!w)return 0;
+  return Math.round((w.getTime()-mondayOf(new Date()).getTime())/(7*dayN()));
+}
+/* 切到某一周：缓存里有就直接用，没有才排；排过的不会再排第二遍 */
+function setWeek(mon){
+  var key=iso(mon),cur=weekMon();
+  if(!S.wcache)S.wcache={};
+  if(cur&&S.week&&S.week.length)S.wcache[iso(cur)]=S.week;
+  var cached=S.wcache[key];
+  if(cached&&cached.length){S.week=cached;save();render();return false;}
+  generate(mon);
+  save();
+  return true;
+}
 function gapDays(id){var h=S.hist[id];if(!h||!h.last)return 999;return Math.round((Date.now()-parseISO(h.last).getTime())/dayN());}
 function isCold(id){
   var h=S.hist[id];if(!h)return false;
@@ -1088,8 +1124,8 @@ function shuffle(a){
 }
 function pick(list,now,usedWeek){if(!list.length)return null;return rank(list,now,usedWeek)[0].d;}
 
-function generate(){
-  var mon=mondayOf(new Date()),now=Date.now();
+function generate(baseMon){
+  var mon=baseMon?mondayOf(baseMon):mondayOf(new Date()),now=Date.now();
   var used={},weekP={},weekV={},week=[];
   var labels=["周一","周二","周三","周四","周五"];
   var order=shuffle([0,1,2,3,4]);
@@ -1223,6 +1259,13 @@ function generate(){
   }
 
   S.week=week;
+  /* 顺手记进缓存：只留上周/本周/下周三条，不让它无限长 */
+  if(!S.wcache)S.wcache={};
+  var keep={};keep[iso(mon)]=week;
+  var pm=iso(new Date(mon.getTime()-7*dayN())),nm=iso(new Date(mon.getTime()+7*dayN()));
+  if(S.wcache[pm])keep[pm]=S.wcache[pm];
+  if(S.wcache[nm])keep[nm]=S.wcache[nm];
+  S.wcache=keep;
   var today=iso(new Date());
   week.forEach(function(dd){
     ["protein","veg1","veg2","soup","staple"].forEach(function(kk){
@@ -1335,8 +1378,15 @@ function renderWeek(){
     el.innerHTML='<div class="empty">还没排过。点上面「重新排一周」。</div>';
     return;
   }
-  var ti=todayIndex(),h="";
-  /* 两种发法：文字贴群里照着做；链接让对方手机上看到同一周，但只认本周和下周 */
+  var ti=todayIndex(),h="",diff=weekDiff();
+  var wname=diff===0?"本周":(diff===1?"下周":(diff===-1?"上周":"这一周"));
+  var rng=S.week[0].date.slice(5)+" ~ "+S.week[S.week.length-1].date.slice(5);
+  /* 周末默认停在下周，但得让人能切回去看一眼这周还剩什么菜 */
+  h+='<div class="wkbar"><span class="wk-lab"><b>'+rng+'</b><i>'+wname+'</i></span>'+
+     (RO?"":'<span class="wk-sw">'+
+       '<button class="pill'+(diff===0?" on-ok":"")+'" data-wk="0" type="button">本周</button>'+
+       '<button class="pill'+(diff===1?" on-ok":"")+'" data-wk="1" type="button">下周</button>'+
+     '</span>')+'</div>';
   h+='<p class="hint" style="margin-top:0">「发链接」让对方手机上看到同一周，只在本周和下周内有效。'+
     (RO?"":(LIC_ON?"":"免费版还能自己重排 "+regenLeft()+" 次。"))+'</p>';
   for(var i=0;i<S.week.length;i++){
@@ -1364,10 +1414,19 @@ function renderToday(){
   var ti=todayIndex(),preview=false;
   if(ti<0){ti=0;preview=true;}
   var day=S.week[ti],tl=timeline(day);
+  /* 今天不在排程里时，把「为什么不是今天」说清楚：周末就给下周一，别让人以为日期错了 */
+  var note="";
+  if(preview){
+    var df=weekDiff();
+    if(isWeekend()&&df===1)note=" · 今天周末，先看下周这天的安排";
+    else if(df===1)note=" · 这是下周的安排";
+    else if(df===-1)note=" · 这周已经过完了";
+    else note=" · 今天不在排程里，先看这天的流程";
+  }
   var now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
   var h='<div class="tl-hero"><div class="big">'+day.label+' · '+S.serve+' 开饭</div>'+
     '<div class="meta">'+day.date+' · '+hm(tl.start)+' 开始动手，全程 '+Math.round(tl.total)+' 分钟，其中站在灶前约 '+Math.round(tl.stoveSum||0)+' 分钟'+
-    (preview?' · 今天不在排程里，先看这天的流程':'')+'</div>';
+    note+'</div>';
   if(!preview&&nowMin>tl.start&&nowMin<toMin(S.serve)){
     h+='<div class="warnline">现在 '+hm(nowMin)+' 了，按计划 '+hm(tl.start)+' 就该动手，先去把菜洗了。</div>';
   }
@@ -2010,7 +2069,7 @@ function init(){
       toast("免费版的 5 次重排用完了。设置最下面输入激活码可以解锁无限重排");
       return;
     }
-    generate();
+    generate(weekMon()||idealMon());
     toast(LIC_ON?"重排好了，顺手看看「今天」":"重排好了，免费版还能重排 "+regenLeft()+" 次");
   });
   document.getElementById("btnPrint").addEventListener("click",function(){window.print();});
@@ -2018,6 +2077,16 @@ function init(){
 
   document.addEventListener("click",function(e){
     if(e.target.id==="obNext"){obNext();return;}
+    /* 本周 / 下周 切换：切到已经排过的周不重排，也不扣免费次数 */
+    var _wb=e.target.closest?e.target.closest("[data-wk]"):null;
+    if(_wb){
+      var _base=mondayOf(new Date());
+      var _want=_wb.getAttribute("data-wk")==="1"?new Date(_base.getTime()+7*dayN()):_base;
+      if(iso(_want)===iso(weekMon()||new Date(0))){return;}
+      var _made=setWeek(_want);
+      if(_made)toast(_wb.getAttribute("data-wk")==="1"?"下周排好了，买菜清单也换成下周的":"回到本周");
+      return;
+    }
     if(e.target.id==="obPrev"){obPrev();return;}
     if(e.target.id==="obDone"){obClose();return;}
     if(e.target.id==="obElder"){
@@ -2092,11 +2161,12 @@ function init(){
   }
 
   var had=!!(S.week&&S.week.length);
-  var curMon=iso(mondayOf(new Date()));
-  var stale=had&&S.week[0].date!==curMon;
+  var want=idealMon(),have=weekMon();
+  var stale=had&&(!have||iso(have)!==iso(want));
   if(!had||stale){
-    generate();
-    if(stale)setTimeout(function(){toast("新的一周，菜单已经自动排好");},400);
+    var weekend=isWeekend();
+    setWeek(want);
+    if(had)setTimeout(function(){toast(weekend?"周末了，下周的菜单和买菜清单先给你排好了":"新的一周，菜单已经自动排好");},400);
   }else{
     render();
   }
